@@ -4,7 +4,7 @@
 #include "network.h"
 
 int main() {
-    std::vector<int> hiddenLayers = {0};
+    std::vector<int> hiddenLayers = {};
     Network myNetwork = Network(2, 1, hiddenLayers, Activation::SIGMOID);
     myNetwork.print();
 
@@ -14,9 +14,9 @@ int main() {
                                                     {4, 5},
                                                     {6, 0.7},
                                                     {1, 1.5}};
-    std::vector<double> expectedResults = {0,1,1,1,0,0};
+    std::vector<std::vector<double>> expectedResults = {{0},{1},{1},{1},{0},{0}};
 
-    myNetwork.train(1000, trainingData, expectedResults);
+    myNetwork.train(10000, trainingData, expectedResults);
 
     myNetwork.print();
 

@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdexcept>
 #include <string>
+#include <map>
 
 #include "network.h"
 
@@ -96,40 +97,33 @@ std::vector<double> Network::forwardPass(std::vector<double> inputValues, bool p
     return outputValues;
 }
 
-double Network::train(int epochs, std::vector<std::vector<double>> trainingData, std::vector<double> expectedResults, double stepSize) {
-    
-    if (expectedResults.size() != trainingData.size()) throw std::invalid_argument("Amount of expected results does not match amount of training data");
-    
-    std::vector<double> forwardPassResult;
+void backPropogate(Network* network, std::vector<double> expectedResults, std::vector<double> obtainedResults, double stepSize) {
+    double delta;  // store current delta of node
+    double activationDerivative;  // store the value of the node put through the integrated activation function
+    double sumOfOutputs;  // the sum of all of the weights for the inputs
+
+    std::map<Link*, double> sumWeightMap;  // stores the sum of the updates weights (this will need to be divided by the toatl number of rows)
+    std::map<Node*, double> sumBiasMap;
     std::vector<double> prevLayerDeltas;
     std::vector<double> currentDeltas;
-    double correctResult;
-    double delta;
-    double activationDerivative;
-    double sumOfOutputs;
     
-    for (size_t epoch = 0; epoch < epochs; epoch++) {
-       
-       for (size_t i = 0; i < trainingData.size(); i++) {  // for each row of training data 
-
-            forwardPassResult = this->forwardPass(trainingData.at(i));  // do a forward pass
-            correctResult = expectedResults.at(i);
-
-            std::vector<Node*> outputNodes = this->layers.at(this->layers.size()-1)->getNodes();
+    std::vector<Node*> outputNodes = network->getLayers().at(network->getLayers().size()-1)->getNodes();
 
             for (size_t outputNode = 0; outputNode < outputNodes.size(); outputNode++) {  // for each output node
                 Node* currentNode = outputNodes.at(outputNode);
 
                 activationDerivative = currentNode->getValue() * (1-currentNode->getValue());  // calculate derived output value
-                delta = (correctResult-currentNode->getValue()) * activationDerivative;  // calculate delta
+                delta = (expectedResults.at(outputNode)-currentNode->getValue()) * activationDerivative;  // calculate delta
                
                 prevLayerDeltas.push_back(delta);
+
+                sumBiasMap[currentNode] += (currentNode->getBias() + (stepSize * delta * 1));
             } 
 
-            for (int hiddenLayer = this->layers.size() - 2; hiddenLayer >= 0; hiddenLayer--) {  // for each hidden layer
-                Layer* currentLayer = this->layers.at(hiddenLayer);
+            for (int hiddenLayer = network->getLayers().size() - 2; hiddenLayer >= 0; hiddenLayer--) {  // for each hidden layer
+                Layer* currentLayer = network->getLayers().at(hiddenLayer);
                 currentDeltas.clear();  // clear the current deltas vector
-                for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {
+                for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {  // for each node in the layer
                     Node* currentNode = currentLayer->getNodes().at(nodeCounter);
 
                     activationDerivative = currentNode->getValue() * (1-currentNode->getValue());  // calculate derived output value
@@ -150,10 +144,10 @@ double Network::train(int epochs, std::vector<std::vector<double>> trainingData,
                     for (size_t linkCounter = 0; linkCounter < currentNode->getOutLinks().size(); linkCounter++) {  // for each out link of that node
                         Link* currentLink = currentNode->getOutLinks().at(linkCounter);
 
-                        currentLink->setWeight(currentLink->getWeight()+(stepSize*prevLayerDeltas.at(linkCounter)*currentNode->getRawValue()));
+                        sumWeightMap[currentLink] += currentLink->getWeight()+(stepSize*prevLayerDeltas.at(linkCounter)*currentNode->getRawValue());
                     }
                     if (currentLayer->getType() != LayerType::INPUT) {
-                        currentNode->setBias(currentNode->getBias() + (stepSize * currentDeltas.at(nodeCounter) * 1)); // update the bias of the node
+                        sumBiasMap[currentNode] += (currentNode->getBias() + (stepSize * currentDeltas.at(nodeCounter) * 1));
                     }
                     
                 }
@@ -161,7 +155,36 @@ double Network::train(int epochs, std::vector<std::vector<double>> trainingData,
                 prevLayerDeltas.clear();
                 prevLayerDeltas = currentDeltas;
             }
-       }
+
+        std::map<Link*, double>::iterator weightIt = sumWeightMap.begin();
+        for (auto weightIt = sumWeightMap.begin(); weightIt != sumWeightMap.end(); ++weightIt)  {  // for each node in the map
+            weightIt->first->setWeight((weightIt->second)/obtainedResults.size());  // divide the changes to make to the weight by the total amounts of data it has been trained on
+        }
+
+        std::map<Node*, double>::iterator biasIt = sumBiasMap.begin();
+        for (auto biasIt = sumBiasMap.begin(); biasIt != sumBiasMap.end(); ++biasIt)  {  // for each node in the map
+            biasIt->first->setBias((biasIt->second)/obtainedResults.size());  // divide the changes to make to the weight by the total amounts of data it has been trained on
+        }
+        
+}
+
+double Network::train(int epochs, std::vector<std::vector<double>> trainingData, std::vector<std::vector<double>> expectedResults, double stepSize) {
+    
+    if (expectedResults.size() != trainingData.size()) throw std::invalid_argument("Amount of expected results does not match amount of training data");
+    
+    std::vector<double> forwardPassResult;
+    std::vector<double>correctResult;
+
+    
+    for (size_t epoch = 0; epoch < epochs; epoch++) {
+       
+       for (size_t i = 0; i < trainingData.size(); i++) {  // for each row of training data 
+
+            forwardPassResult = this->forwardPass(trainingData.at(i));  // do a forward pass
+            correctResult = expectedResults.at(i);
+            backPropogate(this, correctResult, forwardPassResult, stepSize);
+            
+       }  // ALTERING THE WEIGHTS AND BIAS' AFTER EACH ROW OF TRAINNIG DATA NOT AFTER EACH EPOCH
        
     }
 
