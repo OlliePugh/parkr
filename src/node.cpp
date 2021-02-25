@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdexcept>
 #include "node.h"
+#include "activation.h"
 
 void Node::addInLink(Link* newLink) {  // add a link to the list of input links
     this->inputLinks.push_back(newLink);
@@ -22,6 +23,7 @@ double Node::calcValue() {  // calculate the value that this node represents
         this->value += this->inputLinks.at(i)->getBias() + (this->inputLinks.at(i)->getWeight() * inputLinks.at(i)->getParent()->getValue());  // get the value of the previous node and add it to the 
     }
 
+    this->value = Activation::activate(this->getLayer()->getNetwork()->getActivationMethod(), this->value);
     
     return this->value;
 }
