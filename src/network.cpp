@@ -114,57 +114,56 @@ void backPropogate(Network* network, std::vector<double> expectedResults, std::v
 
                 activationDerivative = currentNode->getValue() * (1-currentNode->getValue());  // calculate derived output value
                 delta = (expectedResults.at(outputNode)-currentNode->getValue()) * activationDerivative;  // calculate delta
-               
                 prevLayerDeltas.push_back(delta);
 
                 sumBiasMap[currentNode] += (currentNode->getBias() + (stepSize * delta * 1));
             } 
 
-            for (int hiddenLayer = network->getLayers().size() - 2; hiddenLayer >= 0; hiddenLayer--) {  // for each hidden layer
-                Layer* currentLayer = network->getLayers().at(hiddenLayer);
-                currentDeltas.clear();  // clear the current deltas vector
-                for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {  // for each node in the layer
-                    Node* currentNode = currentLayer->getNodes().at(nodeCounter);
+    for (int hiddenLayer = network->getLayers().size() - 2; hiddenLayer >= 0; hiddenLayer--) {  // for each hidden layer
+        Layer* currentLayer = network->getLayers().at(hiddenLayer);
+        currentDeltas.clear();  // clear the current deltas vector
+        for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {  // for each node in the layer
+            Node* currentNode = currentLayer->getNodes().at(nodeCounter);
 
-                    activationDerivative = currentNode->getValue() * (1-currentNode->getValue());  // calculate derived output value
-                    sumOfOutputs = 0;  // reset the sum of outputs value
+            activationDerivative = currentNode->getValue() * (1-currentNode->getValue());  // calculate derived output value
+            sumOfOutputs = 0;  // reset the sum of outputs value
 
-                    for (size_t linkCounter = 0; linkCounter < currentNode->getOutLinks().size(); linkCounter++) {
-                        sumOfOutputs += (currentNode->getOutLinks().at(linkCounter)->getWeight()*prevLayerDeltas.at(linkCounter));
-                    }
-
-                    delta = sumOfOutputs*activationDerivative;
-                    currentDeltas.push_back(delta);  // add delta to current deltas for the next layer 
-                }
-
-                // once all the deltas have been calculated go through and update all weights and bias' for that layer
-
-                for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {
-                    Node* currentNode = currentLayer->getNodes().at(nodeCounter);
-                    for (size_t linkCounter = 0; linkCounter < currentNode->getOutLinks().size(); linkCounter++) {  // for each out link of that node
-                        Link* currentLink = currentNode->getOutLinks().at(linkCounter);
-
-                        sumWeightMap[currentLink] += currentLink->getWeight()+(stepSize*prevLayerDeltas.at(linkCounter)*currentNode->getRawValue());
-                    }
-                    if (currentLayer->getType() != LayerType::INPUT) {
-                        sumBiasMap[currentNode] += (currentNode->getBias() + (stepSize * currentDeltas.at(nodeCounter) * 1));
-                    }
-                    
-                }
-
-                prevLayerDeltas.clear();
-                prevLayerDeltas = currentDeltas;
+            for (size_t linkCounter = 0; linkCounter < currentNode->getOutLinks().size(); linkCounter++) {
+                sumOfOutputs += (currentNode->getOutLinks().at(linkCounter)->getWeight()*prevLayerDeltas.at(linkCounter));
             }
 
-        std::map<Link*, double>::iterator weightIt = sumWeightMap.begin();
-        for (auto weightIt = sumWeightMap.begin(); weightIt != sumWeightMap.end(); ++weightIt)  {  // for each node in the map
-            weightIt->first->setWeight((weightIt->second)/obtainedResults.size());  // divide the changes to make to the weight by the total amounts of data it has been trained on
+            delta = sumOfOutputs*activationDerivative;
+            currentDeltas.push_back(delta);  // add delta to current deltas for the next layer 
         }
 
-        std::map<Node*, double>::iterator biasIt = sumBiasMap.begin();
-        for (auto biasIt = sumBiasMap.begin(); biasIt != sumBiasMap.end(); ++biasIt)  {  // for each node in the map
-            biasIt->first->setBias((biasIt->second)/obtainedResults.size());  // divide the changes to make to the weight by the total amounts of data it has been trained on
+        // once all the deltas have been calculated go through and update all weights and bias' for that layer
+
+        for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {
+            Node* currentNode = currentLayer->getNodes().at(nodeCounter);
+            for (size_t linkCounter = 0; linkCounter < currentNode->getOutLinks().size(); linkCounter++) {  // for each out link of that node
+                Link* currentLink = currentNode->getOutLinks().at(linkCounter);
+
+                sumWeightMap[currentLink] += currentLink->getWeight()+(stepSize*prevLayerDeltas.at(linkCounter)*currentNode->getRawValue());
+            }
+            if (currentLayer->getType() != LayerType::INPUT) {
+                sumBiasMap[currentNode] += (currentNode->getBias() + (stepSize * currentDeltas.at(nodeCounter) * 1));
+            }
+            
         }
+
+        prevLayerDeltas.clear();
+        prevLayerDeltas = currentDeltas;
+    }
+
+    std::map<Link*, double>::iterator weightIt = sumWeightMap.begin();
+    for (auto weightIt = sumWeightMap.begin(); weightIt != sumWeightMap.end(); ++weightIt)  {  // for each node in the map
+        weightIt->first->setWeight((weightIt->second)/obtainedResults.size());  // divide the changes to make to the weight by the total amounts of data it has been trained on
+    }
+
+    std::map<Node*, double>::iterator biasIt = sumBiasMap.begin();
+    for (auto biasIt = sumBiasMap.begin(); biasIt != sumBiasMap.end(); ++biasIt)  {  // for each node in the map
+        biasIt->first->setBias((biasIt->second)/obtainedResults.size());  // divide the changes to make to the weight by the total amounts of data it has been trained on
+    }
         
 }
 
