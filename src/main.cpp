@@ -16,7 +16,7 @@ int main() {
                                                     {1, 1.5}};
     std::vector<std::vector<double>> expectedResults = {{0},{1},{1},{1},{0},{0}};
 
-    myNetwork.train(10000, trainingData, expectedResults);
+    myNetwork.train(100, trainingData, expectedResults);
 
     myNetwork.print();
 

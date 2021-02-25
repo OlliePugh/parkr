@@ -174,6 +174,7 @@ double Network::train(int epochs, std::vector<std::vector<double>> trainingData,
     
     std::vector<double> forwardPassResult;
     std::vector<double>correctResult;
+    double trainingLoss;
 
     
     for (size_t epoch = 0; epoch < epochs; epoch++) {
@@ -182,10 +183,19 @@ double Network::train(int epochs, std::vector<std::vector<double>> trainingData,
 
             forwardPassResult = this->forwardPass(trainingData.at(i));  // do a forward pass
             correctResult = expectedResults.at(i);
+            
+            trainingLoss=0;
+            for (size_t j = 0; j < correctResult.size(); j++) {
+                trainingLoss += (correctResult.at(j)-forwardPassResult.at(j));
+            }
+
+            trainingLoss = (trainingLoss*trainingLoss)/correctResult.size();
+
+            std::cout << trainingLoss << " training loss " << std::endl;
+            
             backPropogate(this, correctResult, forwardPassResult, stepSize);
             
-       }  // ALTERING THE WEIGHTS AND BIAS' AFTER EACH ROW OF TRAINNIG DATA NOT AFTER EACH EPOCH
-       
+       } 
     }
 
     return 1.0;
