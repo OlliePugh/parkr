@@ -10,13 +10,13 @@ Network::Network(int inputNodes, int outputNodes, std::vector<int> hiddenLayers,
 
     this->activationMethod = activationMethod;
 
-    this->layers.push_back(new Layer(this, Layer::INPUT, inputNodes));  // create a new layer of type input
+    this->layers.push_back(new Layer(this, LayerType::INPUT, inputNodes));  // create a new layer of type input
 
     for (int i=0; i<hiddenLayers.size(); i++) {
-        this->layers.push_back(new Layer(this, Layer::HIDDEN, hiddenLayers.at(i), this->layers.back()));  // create a new hidden layer 
+        this->layers.push_back(new Layer(this, LayerType::HIDDEN, hiddenLayers.at(i), this->layers.back()));  // create a new hidden layer 
     }
 
-    this->layers.push_back(new Layer(this, Layer::OUTPUT, outputNodes, this->layers.back()));  // create output layer
+    this->layers.push_back(new Layer(this, LayerType::OUTPUT, outputNodes, this->layers.back()));  // create output layer
 }
 
 void Network::print() {
@@ -73,7 +73,7 @@ std::vector<double> Network::forwardPass(std::vector<double> inputValues, bool p
 
             Node* currentNode = currentLayer->getNodes().at(nodeCount);
 
-            if (currentLayer->getType() == Layer::INPUT) {  // if first layer
+            if (currentLayer->getType() == LayerType::INPUT) {  // if first layer
                 
                 if (inputValues.size() != currentLayer->getNodes().size()) {  // if the amount of inputs doesnt match the amount of input nodes
                     throw std::invalid_argument("Expecting " + std::to_string(currentLayer->getNodes().size()) + " input values, received " + std::to_string(inputValues.size()));
@@ -82,7 +82,7 @@ std::vector<double> Network::forwardPass(std::vector<double> inputValues, bool p
                 currentNode->setValue(inputValues.at(nodeCount));  // set the value of the nth input to the nth input node
             }
             
-            else if (currentLayer->getType() == Layer::OUTPUT) {  // this is the output layer
+            else if (currentLayer->getType() == LayerType::OUTPUT) {  // this is the output layer
                 outputValues.push_back(currentNode->calcValue());  // add the value of one of the output nodes to the output vector
             }
                 

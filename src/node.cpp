@@ -12,7 +12,7 @@ void Node::addOutLink(Link* newLink) {  // add a link to the list of output link
 }
 
 double Node::calcValue() {  // calculate the value that this node represents
-    if (this->layer->getType() == Layer::INPUT) {  // if the layer is in the input need to get input value from user
+    if (this->layer->getType() == LayerType::INPUT) {  // if the layer is in the input need to get input value from user
         throw std::logic_error("Can't calculate value of node in input layer");
     }
 
