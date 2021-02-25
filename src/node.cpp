@@ -16,14 +16,14 @@ double Node::calcValue() {  // calculate the value that this node represents
         throw std::logic_error("Can't calculate value of node in input layer");
     }
 
-    this->value = 0;
+    this->rawValue = this->bias;
 
     for (size_t i = 0; i < this->inputLinks.size(); i++) {  // for each link in the inputs 
         //std::cout << this->inputLinks.at(i)->getBias() <<  " + (" << this->inputLinks.at(i)->getWeight() << " * " << inputLinks.at(i)->getParent()->getValue() << ") = " << this->inputLinks.at(i)->getBias() + (this->inputLinks.at(i)->getWeight() * inputLinks.at(i)->getParent()->getValue()) << std::endl;
-        this->value += this->inputLinks.at(i)->getBias() + (this->inputLinks.at(i)->getWeight() * inputLinks.at(i)->getParent()->getValue());  // get the value of the previous node and add it to the 
+        this->rawValue += + this->inputLinks.at(i)->getWeight()*this->inputLinks.at(i)->getParent()->getValue();  // get the value of the previous node and add it to the 
     }
 
-    this->value = Activation::activate(this->getLayer()->getNetwork()->getActivationMethod(), this->value);
+    this->value = Activation::activate(this->getLayer()->getNetwork()->getActivationMethod(), this->rawValue);
     
     return this->value;
 }

@@ -22,11 +22,10 @@ Network::Network(int inputNodes, int outputNodes, std::vector<int> hiddenLayers,
 void Network::print() {
     int nodeId = 0;
     for (int i=0; i < this->layers.size(); i++) {
-        std::string toPrint = "";
         for (int j = 0; j < this->layers.at(i)->getNodes().size(); j++){
-            toPrint += (char) (65+nodeId++); // incriment the node id
+            std::cout << (char) (65+nodeId++) << " (" << this->layers.at(i)->getNodes().at(j)->getBias() << ") ";
         }
-        std::cout << toPrint << std::endl; 
+        std::cout << std::endl; 
     }
 
     std::cout << std::endl; 
@@ -49,16 +48,13 @@ void Network::print() {
 
                 std::cout << (char) (65+nodeId) << "->" << (char) (65+(nodeId-nodeCounter+currentLayer->getNodes().size()+linkCounter));  // calculate the ID of the node we are currently comparing to
                 
-                std::cout << " B: " << currentLink->getBias() << " W: " << currentLink->getWeight() << std::endl;
+                std::cout << " W: " << currentLink->getWeight() << std::endl;
             }
             nodeId++;
         }
         
     }
-    
-
-    std::cout << std::endl << "Press enter to continue" << std::endl;
-    std::cin.get();  // wait for the user
+    std::cout << std::endl;
 }
 
 std::vector<double> Network::forwardPass(std::vector<double> inputValues, bool printResult=false) {
@@ -80,6 +76,7 @@ std::vector<double> Network::forwardPass(std::vector<double> inputValues, bool p
                 }
 
                 currentNode->setValue(inputValues.at(nodeCount));  // set the value of the nth input to the nth input node
+                currentNode->setRawValue(inputValues.at(nodeCount));  // set the raw value because it is an input
             }
             
             else if (currentLayer->getType() == LayerType::OUTPUT) {  // this is the output layer
@@ -97,4 +94,77 @@ std::vector<double> Network::forwardPass(std::vector<double> inputValues, bool p
         }
     }
     return outputValues;
+}
+
+double Network::train(int epochs, std::vector<std::vector<double>> trainingData, std::vector<double> expectedResults, double stepSize) {
+    
+    if (expectedResults.size() != trainingData.size()) throw std::invalid_argument("Amount of expected results does not match amount of training data");
+    
+    std::vector<double> forwardPassResult;
+    std::vector<double> prevLayerDeltas;
+    std::vector<double> currentDeltas;
+    double correctResult;
+    double delta;
+    double activationDerivative;
+    double sumOfOutputs;
+    
+    for (size_t epoch = 0; epoch < epochs; epoch++) {
+       
+       for (size_t i = 0; i < trainingData.size(); i++) {  // for each row of training data 
+
+            forwardPassResult = this->forwardPass(trainingData.at(i));  // do a forward pass
+            correctResult = expectedResults.at(i);
+
+            std::vector<Node*> outputNodes = this->layers.at(this->layers.size()-1)->getNodes();
+
+            for (size_t outputNode = 0; outputNode < outputNodes.size(); outputNode++) {  // for each output node
+                Node* currentNode = outputNodes.at(outputNode);
+
+                activationDerivative = currentNode->getValue() * (1-currentNode->getValue());  // calculate derived output value
+                delta = (correctResult-currentNode->getValue()) * activationDerivative;  // calculate delta
+               
+                prevLayerDeltas.push_back(delta);
+            } 
+
+            for (int hiddenLayer = this->layers.size() - 2; hiddenLayer >= 0; hiddenLayer--) {  // for each hidden layer
+                Layer* currentLayer = this->layers.at(hiddenLayer);
+                currentDeltas.clear();  // clear the current deltas vector
+                for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {
+                    Node* currentNode = currentLayer->getNodes().at(nodeCounter);
+
+                    activationDerivative = currentNode->getValue() * (1-currentNode->getValue());  // calculate derived output value
+                    sumOfOutputs = 0;  // reset the sum of outputs value
+
+                    for (size_t linkCounter = 0; linkCounter < currentNode->getOutLinks().size(); linkCounter++) {
+                        sumOfOutputs += (currentNode->getOutLinks().at(linkCounter)->getWeight()*prevLayerDeltas.at(linkCounter));
+                    }
+
+                    delta = sumOfOutputs*activationDerivative;
+                    currentDeltas.push_back(delta);  // add delta to current deltas for the next layer 
+                }
+
+                // once all the deltas have been calculated go through and update all weights and bias' for that layer
+
+                for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {
+                    Node* currentNode = currentLayer->getNodes().at(nodeCounter);
+                    for (size_t linkCounter = 0; linkCounter < currentNode->getOutLinks().size(); linkCounter++) {  // for each out link of that node
+                        Link* currentLink = currentNode->getOutLinks().at(linkCounter);
+
+                        currentLink->setWeight(currentLink->getWeight()+(stepSize*prevLayerDeltas.at(linkCounter)*currentNode->getRawValue()));
+                    }
+                    if (currentLayer->getType() != LayerType::INPUT) {
+                        currentNode->setBias(currentNode->getBias() + (stepSize * currentDeltas.at(nodeCounter) * 1)); // update the bias of the node
+                    }
+                    
+                }
+
+                prevLayerDeltas.clear();
+                prevLayerDeltas = currentDeltas;
+            }
+       }
+       
+    }
+
+    return 1.0;
+    
 }

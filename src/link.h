@@ -6,7 +6,6 @@
 class Link {
     private:
         double weight;
-        double bias;
         Node* child;
         Node* parent;
 
@@ -14,8 +13,8 @@ class Link {
         Link(Node*, Node*);
         Node* getChild() { return this->child; };
         Node* getParent() { return this->parent; };
-        double getBias() { return this->bias; };
         double getWeight() { return this->weight; };
+        void setWeight(double _weight) { this->weight = _weight; };
 };
 
 #endif
