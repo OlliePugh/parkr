@@ -17,7 +17,7 @@ class Node {
         void addInLink(Link*);
         void addOutLink(Link*);
         double calcValue();
-        double setValue(double _value) { this->value = _value; };  // set the value of a node
+        void setValue(double _value) { this->value = _value; };  // set the value of a node
         double getValue() { return this->value; };
         std::vector<Link*> getInLinks() { return this->inputLinks;};
         std::vector<Link*> getOutLinks() { return this->outputLinks;};

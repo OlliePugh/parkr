@@ -17,7 +17,7 @@ Network::Network(int inputNodes, int outputNodes, std::vector<int> hiddenLayers)
     this->layers.push_back(new Layer(Layer::OUTPUT, outputNodes, this->layers.back()));  // create output layer
 }
 
-std::string Network::print() {
+void Network::print() {
     int nodeId = 0;
     for (int i=0; i < this->layers.size(); i++) {
         std::string toPrint = "";

@@ -10,7 +10,7 @@ class Network {
         std::vector<Layer*> layers;  // store each layer
     public:
         Network(int, int, std::vector<int>);
-        std::string print();
+        void print();
         std::vector<double> forwardPass(std::vector<double>, bool);  // forward pass of the network with the input values as a vector
         double train();
 };
