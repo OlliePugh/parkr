@@ -5,7 +5,7 @@ double sigmoid(double value) {
     return 1/(1+exp(-value));
 }
 
-double Activation::activate(int method, double value) {
+double Activation::activate(Activation::method method, double value) {
     switch (method)
     {
     case Activation::SIGMOID:

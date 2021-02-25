@@ -5,7 +5,7 @@
 
 #include "network.h"
 
-Network::Network(int inputNodes, int outputNodes, std::vector<int> hiddenLayers, int activationMethod) {
+Network::Network(int inputNodes, int outputNodes, std::vector<int> hiddenLayers, Activation::method activationMethod) {
     srand(time(NULL));  // init for randomised values
 
     this->activationMethod = activationMethod;

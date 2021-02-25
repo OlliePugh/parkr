@@ -2,11 +2,11 @@
 #define _ACTIVATIONH_
 
 struct Activation {
-    enum methods { 
+    enum method { 
         NONE,
         SIGMOID
     };
-    static double activate(int, double);
+    static double activate(Activation::method, double);
 };
 
 #endif
