@@ -18,7 +18,7 @@ double Node::calcValue() {  // calculate the value that this node represents
     this->value = 0;
 
     for (size_t i = 0; i < this->inputLinks.size(); i++) {  // for each link in the inputs 
-        std::cout << this->inputLinks.at(i)->getBias() <<  " + (" << this->inputLinks.at(i)->getWeight() << " * " << inputLinks.at(i)->getParent()->getValue() << ") = " << this->inputLinks.at(i)->getBias() + (this->inputLinks.at(i)->getWeight() * inputLinks.at(i)->getParent()->getValue()) << std::endl;
+        //std::cout << this->inputLinks.at(i)->getBias() <<  " + (" << this->inputLinks.at(i)->getWeight() << " * " << inputLinks.at(i)->getParent()->getValue() << ") = " << this->inputLinks.at(i)->getBias() + (this->inputLinks.at(i)->getWeight() * inputLinks.at(i)->getParent()->getValue()) << std::endl;
         this->value += this->inputLinks.at(i)->getBias() + (this->inputLinks.at(i)->getWeight() * inputLinks.at(i)->getParent()->getValue());  // get the value of the previous node and add it to the 
     }
 
