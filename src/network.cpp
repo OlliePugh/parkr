@@ -5,16 +5,18 @@
 
 #include "network.h"
 
-Network::Network(int inputNodes, int outputNodes, std::vector<int> hiddenLayers) {
+Network::Network(int inputNodes, int outputNodes, std::vector<int> hiddenLayers, int activationMethod) {
     srand(time(NULL));  // init for randomised values
 
-    this->layers.push_back(new Layer(Layer::INPUT, inputNodes));  // create a new layer of type input
+    this->activationMethod = activationMethod;
+
+    this->layers.push_back(new Layer(this, Layer::INPUT, inputNodes));  // create a new layer of type input
 
     for (int i=0; i<hiddenLayers.size(); i++) {
-        this->layers.push_back(new Layer(Layer::HIDDEN, hiddenLayers.at(i), this->layers.back()));  // create a new hidden layer 
+        this->layers.push_back(new Layer(this, Layer::HIDDEN, hiddenLayers.at(i), this->layers.back()));  // create a new hidden layer 
     }
 
-    this->layers.push_back(new Layer(Layer::OUTPUT, outputNodes, this->layers.back()));  // create output layer
+    this->layers.push_back(new Layer(this, Layer::OUTPUT, outputNodes, this->layers.back()));  // create output layer
 }
 
 void Network::print() {

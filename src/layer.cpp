@@ -2,8 +2,9 @@
 
 #include "layer.h"
 
-Layer::Layer(int type, int nodeCount) {
+Layer::Layer(Network* network, int type, int nodeCount) {
     if (type != Layer::INPUT) throw std::invalid_argument("Layer without prev layer must be of type INPUT");
+    this->network = network;
     this->type = type;
 
     for (int i=0; i<nodeCount; i++) {  // add the input nodes to the first layer
@@ -12,8 +13,9 @@ Layer::Layer(int type, int nodeCount) {
     
 }
 
-Layer::Layer(int type, int nodeCount, Layer* prevLayer) {
+Layer::Layer(Network* network, int type, int nodeCount, Layer* prevLayer) {
     if (type == Layer::INPUT) throw std::invalid_argument("Layer with prev layer should not be an input layer");
+    this->network = network;
     this->type = type; 
 
     for (int i=0; i<nodeCount; i++) { 
