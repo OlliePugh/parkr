@@ -7,6 +7,7 @@ struct Activation {
         SIGMOID
     };
     static double activate(Activation::method, double);
+    static double integralActivate(Activation::method, double);
 };
 
 #endif
