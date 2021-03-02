@@ -177,27 +177,26 @@ double Network::train(int epochs, std::vector<std::vector<double>> trainingData,
     std::vector<double> forwardPassResult;
     std::vector<double>correctResult;
     double trainingLoss;
-
+    int amountOfOutputs = trainingData.at(0).size()*expectedResults.at(0).size();
     
     for (size_t epoch = 0; epoch < epochs; epoch++) {
-       
+       trainingLoss=0;
        for (size_t i = 0; i < trainingData.size(); i++) {  // for each row of training data 
 
             forwardPassResult = this->forwardPass(trainingData.at(i));  // do a forward pass
-            correctResult = expectedResults.at(i);
+            correctResult = expectedResults.at(i);  // get the expected value for that row
             
-            trainingLoss=0;
-            for (size_t j = 0; j < correctResult.size(); j++) {
+            
+            for (size_t j = 0; j < correctResult.size(); j++) {  // go through each row of data for that epoch
                 trainingLoss += (correctResult.at(j)-forwardPassResult.at(j));
+                trainingLoss *= trainingLoss;  // square the loss
             }
-
-            trainingLoss = (trainingLoss*trainingLoss)/correctResult.size();
-
-            std::cout << trainingLoss << " training loss " << std::endl;
             
             backPropogate(this, correctResult, forwardPassResult, stepSize);
             
        } 
+        std::cout << trainingLoss/amountOfOutputs << " training loss " << std::endl;
+
     }
 
     return 1.0;
