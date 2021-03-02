@@ -3,7 +3,8 @@
 
 struct Activation {
     enum method { 
-        SIGMOID
+        SIGMOID,
+        TANH
     };
     static double activate(Activation::method, double);
     static double derivativeActivate(Activation::method, double);

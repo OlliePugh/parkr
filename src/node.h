@@ -15,7 +15,7 @@ class Node {
         double bias;
 
     public:
-        Node(Layer* _layer) { this->layer = _layer; };
+        Node(Layer* _layer) { this->layer = _layer; this->bias=0; };
         void addInLink(Link*);
         void addOutLink(Link*);
         double calcValue();
