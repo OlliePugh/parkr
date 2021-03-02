@@ -11,7 +11,7 @@ class Network {
         std::vector<Layer*> layers;  // store each layer
         Activation::method activationMethod;
     public:
-        Network(int, int, std::vector<int>, Activation::method=Activation::NONE);  // set default activation to none
+        Network(int, int, std::vector<int>, Activation::method);  // set default activation to none
         void print();
         std::vector<double> forwardPass(std::vector<double>, bool);  // forward pass of the network with the input values as a vector
         Activation::method getActivationMethod() { return this->activationMethod; };

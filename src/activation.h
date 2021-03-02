@@ -3,11 +3,10 @@
 
 struct Activation {
     enum method { 
-        NONE,
         SIGMOID
     };
     static double activate(Activation::method, double);
-    static double integralActivate(Activation::method, double);
+    static double derivativeActivate(Activation::method, double);
 };
 
 #endif
