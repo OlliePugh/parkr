@@ -112,18 +112,21 @@ void backPropogate(Network* network, std::vector<double> expectedResults, std::v
             for (size_t outputNode = 0; outputNode < outputNodes.size(); outputNode++) {  // for each output node
                 Node* currentNode = outputNodes.at(outputNode);
 
-                activationDerivative = currentNode->getValue() * (1-currentNode->getValue());  // calculate derived output value
+                activationDerivative = Activation::integralActivate(network->getActivationMethod(), currentNode->getValue());
                 delta = (expectedResults.at(outputNode)-currentNode->getValue()) * activationDerivative;  // calculate delta
                 prevLayerDeltas.push_back(delta);
 
                 sumBiasMap[currentNode] += (currentNode->getBias() + (stepSize * delta * 1));
             } 
 
-    for (int hiddenLayer = network->getLayers().size() - 2; hiddenLayer >= 0; hiddenLayer--) {  // for each hidden layer
-        Layer* currentLayer = network->getLayers().at(hiddenLayer);
-        currentDeltas.clear();  // clear the current deltas vector
-        for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {  // for each node in the layer
-            Node* currentNode = currentLayer->getNodes().at(nodeCounter);
+            for (int hiddenLayer = network->getLayers().size() - 2; hiddenLayer >= 0; hiddenLayer--) {  // for each hidden layer
+                Layer* currentLayer = network->getLayers().at(hiddenLayer);
+                currentDeltas.clear();  // clear the current deltas vector
+                for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {  // for each node in the layer
+                    Node* currentNode = currentLayer->getNodes().at(nodeCounter);
+
+                    activationDerivative = Activation::integralActivate(network->getActivationMethod(), currentNode->getValue());
+                    sumOfOutputs = 0;  // reset the sum of outputs value
 
             activationDerivative = currentNode->getValue() * (1-currentNode->getValue());  // calculate derived output value
             sumOfOutputs = 0;  // reset the sum of outputs value
