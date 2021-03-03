@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include <map>
+#include <cstring>
 
 #include "network.h"
 
@@ -206,21 +207,23 @@ double Network::train(int epochs, std::vector<std::vector<double>> trainingData,
 
 void Network::save(std::string fileName) {  // save the network to a .prkr file
     std::fstream outputFile;
-    outputFile.open(fileName+".prkr", std::ios::trunc | std::ios::in | std::ios::out | std::ios::binary);
+    outputFile.open(fileName+".prkr", std::ios::trunc | std::ios::out | std::ios::binary);
 
     // save activation method
 
     outputFile.write( (char*) &this->activationMethod, sizeof(this->activationMethod));
 
     // enter how many hidden layers there are
-    ushort layerAmount = this->layers.size()-2;
+    uint16_t layerAmount = this->layers.size()-2;
     outputFile.write((char*) &layerAmount, sizeof(layerAmount));
 
-    ushort nodeAmount;
+    uint16_t nodeAmount;
     for (size_t i = 0; i < this->layers.size(); i++) {  // write how many nodes are in each layer
         nodeAmount = this->layers.at(i)->getNodes().size();
         outputFile.write((char*) &nodeAmount, sizeof(nodeAmount));
     }
+
+    // output bias for each node
 
     Layer* currentLayer;
     Node* currentNode;
@@ -235,6 +238,8 @@ void Network::save(std::string fileName) {  // save the network to a .prkr file
         }
     }
     
+    // output every weight of every link
+
     Link* currentLink;
     double weight;
     for (size_t i = 0; i < this->layers.size()-1; i++) {  // loop through each layer except output layer
@@ -255,7 +260,108 @@ void Network::save(std::string fileName) {  // save the network to a .prkr file
     outputFile.close();
  }
 
-Network Network::open(std::string) {
-    return Network(1,1,{1,1},Activation::SIGMOID);
+Network Network::open(std::string fileName) {
 
+    std::ifstream inputFile = std::ifstream(fileName+".prkr", std::ios::in | std::ios::binary);  // open the file
+    
+    inputFile.seekg(0, std::ios::end); 
+    int length = inputFile.tellg();  // get the length of the file
+    inputFile.seekg(0, std::ios::beg); 
+    char * buffer = new char[length];  // create a buffer array of size of the file
+
+    inputFile.read(buffer, length);
+    
+    inputFile.close();  // close the file
+
+    char* memPointer = &buffer[0];  // point to the first element in the array
+
+    Activation::method activationMethod;
+    std::memcpy(&activationMethod, memPointer, sizeof(Activation::method));
+    memPointer += sizeof(Activation::method);  // move the pointer the amount of bytes forward
+
+    uint16_t hiddenLayerNum;
+    std::memcpy(&hiddenLayerNum, memPointer, sizeof(uint16_t));
+    memPointer += sizeof(uint16_t);  // move the pointer the amount of bytes forward
+
+    std::vector<int> nodesInLayers;
+    uint16_t tempNodeCount=0;
+    
+    for (size_t i = 0; i < hiddenLayerNum+2; i++)  {
+        std::memcpy(&tempNodeCount, memPointer, sizeof(uint16_t));
+        nodesInLayers.push_back(tempNodeCount);
+        memPointer += sizeof(uint16_t);  // incriment the pointer
+    }
+
+    std::vector<double> biass;
+    double nextBias;
+
+    for (size_t i = 0; i < hiddenLayerNum+2; i++)  {  // for each layer
+        for (size_t j = 0; j < nodesInLayers.at(i); j++) {
+            std::memcpy(&nextBias, memPointer, sizeof(double));
+            biass.push_back(nextBias);
+            memPointer += sizeof(double);  // incriment the pointer
+        }
+    } 
+
+    std::vector<double> weights;
+    double nextWeight;
+    
+    for (size_t i = 0; i < hiddenLayerNum+1; i++)  {  // for each layer except output layer
+        for (size_t j = 0; j < (nodesInLayers.at(i)*nodesInLayers.at(i+1)); j++) {
+            std::memcpy(&nextWeight, memPointer, sizeof(double));
+            weights.push_back(nextWeight);
+            memPointer += sizeof(double);  // incriment the pointer
+        }
+    } 
+
+    delete[] buffer;  // free the heap memory
+
+    std::vector<int> hiddenLayerNodeCount;
+    for (size_t i = 1; i < nodesInLayers.size()-1; i++)  {
+        hiddenLayerNodeCount.push_back(nodesInLayers.at(i));
+    }
+
+    Network newNetwork = Network(nodesInLayers.at(0), nodesInLayers.at(nodesInLayers.size()-1), hiddenLayerNodeCount, activationMethod);
+
+    newNetwork.setAllBias(biass);
+    newNetwork.setAllWeights(weights);
+
+    return newNetwork;
+}
+
+void Network::setAllBias(std::vector<double> biass) {
+    Layer* currentLayer;  // store the current layer
+
+    int posCounter = 0;
+
+    for (size_t layerCounter = 0; layerCounter < this->getLayers().size(); layerCounter++) {
+        currentLayer = this->getLayers().at(layerCounter);
+        
+        for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {
+            currentLayer->getNodes().at(nodeCounter)->setBias(biass.at(posCounter++));  // set the bias of the node to the current position of the index then incriment the index
+        }
+        
+    }
+    
+}
+
+void Network::setAllWeights(std::vector<double> weights) {
+    Layer* currentLayer;  // store the current layer
+    Node* currentNode;
+
+    int posCounter = 0;
+
+    for (size_t layerCounter = 0; layerCounter < this->getLayers().size()-1; layerCounter++) {
+        currentLayer = this->getLayers().at(layerCounter);
+        
+        for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {
+            currentNode = currentLayer->getNodes().at(nodeCounter);
+
+            for (size_t linkCounter = 0; linkCounter < currentNode->getOutLinks().size(); linkCounter++) {
+                currentNode->getOutLinks().at(linkCounter)->setWeight(weights.at(posCounter++));
+            }
+            
+        }
+        
+    }
 }

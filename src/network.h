@@ -19,6 +19,8 @@ class Network {
         std::vector<Layer*> getLayers() {return this->layers; };
         void save(std::string);
         static Network open(std::string);
+        void setAllWeights(std::vector<double>);
+        void setAllBias(std::vector<double>);
 };
 
 #endif
