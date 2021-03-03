@@ -17,6 +17,8 @@ class Network {
         Activation::method getActivationMethod() { return this->activationMethod; };
         double train(int, std::vector<std::vector<double>>, std::vector<std::vector<double>>, double=0.1);
         std::vector<Layer*> getLayers() {return this->layers; };
+        void save(std::string);
+        static Network open(std::string);
 };
 
 #endif

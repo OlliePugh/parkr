@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdexcept>
 #include <string>
+#include <fstream>
 #include <map>
 
 #include "network.h"
@@ -199,6 +200,62 @@ double Network::train(int epochs, std::vector<std::vector<double>> trainingData,
 
     }
 
-    return 1.0;
+    return trainingLoss/amountOfOutputs;
     
+}
+
+void Network::save(std::string fileName) {  // save the network to a .prkr file
+    std::fstream outputFile;
+    outputFile.open(fileName+".prkr", std::ios::trunc | std::ios::in | std::ios::out | std::ios::binary);
+
+    // save activation method
+
+    outputFile.write( (char*) &this->activationMethod, sizeof(this->activationMethod));
+
+    // enter how many hidden layers there are
+    ushort layerAmount = this->layers.size()-2;
+    outputFile.write((char*) &layerAmount, sizeof(layerAmount));
+
+    ushort nodeAmount;
+    for (size_t i = 0; i < this->layers.size(); i++) {  // write how many nodes are in each layer
+        nodeAmount = this->layers.at(i)->getNodes().size();
+        outputFile.write((char*) &nodeAmount, sizeof(nodeAmount));
+    }
+
+    Layer* currentLayer;
+    Node* currentNode;
+    double bias;
+    for (size_t i = 0; i < this->layers.size(); i++) {  // write how many nodes are in each layer
+        currentLayer = this->layers.at(i);
+        for (size_t j = 0; j <currentLayer->getNodes().size(); j++)
+        {
+            currentNode = currentLayer->getNodes().at(j);
+            bias = currentNode->getBias();
+            outputFile.write((char*) &bias, sizeof(bias));
+        }
+    }
+    
+    Link* currentLink;
+    double weight;
+    for (size_t i = 0; i < this->layers.size()-1; i++) {  // loop through each layer except output layer
+        currentLayer = this->layers.at(i);
+        for (size_t j = 0; j <currentLayer->getNodes().size(); j++)
+        {
+            currentNode = currentLayer->getNodes().at(j);
+            
+            for (size_t linkCounter = 0; linkCounter < currentNode->getOutLinks().size(); linkCounter++) {  // for each out link for the node
+                currentLink = currentNode->getOutLinks().at(linkCounter);
+                weight = currentLink->getWeight();
+
+                outputFile.write((char*) &weight, sizeof(weight));
+            }
+            
+        }
+    }
+    outputFile.close();
+ }
+
+Network Network::open(std::string) {
+    return Network(1,1,{1,1},Activation::SIGMOID);
+
 }

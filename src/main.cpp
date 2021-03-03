@@ -20,6 +20,8 @@ int main() {
 
     myNetwork.print();
 
+    myNetwork.save("test");
+
     /*std::vector<double> params = {1,1,1};
     std::vector<double> results = myNetwork.forwardPass(params, true);*/
     
