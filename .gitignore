@@ -1,6 +1,8 @@
 # Parker files
 *.prkr
 
+build/
+
 # Prerequisites
 *.d
 
