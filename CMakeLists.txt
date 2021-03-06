@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0.0)
 
 project(parker VERSION 0.1.0)
 
+SET(CMAKE_SHARED_LINKER_FLAGS ${Enclave_Link_Flags}) 
 # Find source files
 file(GLOB SOURCES src/*.cpp)
 
@@ -9,7 +10,7 @@ file(GLOB SOURCES src/*.cpp)
 include_directories(include)
 
 # Create shared library
-add_library(${PROJECT_NAME} ${SOURCES})
+add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 # Install library
 install(TARGETS ${PROJECT_NAME} DESTINATION lib/${PROJECT_NAME})
