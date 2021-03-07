@@ -14,6 +14,15 @@ double derivativeTanh(double value) {
     return 1-pow(std::tanh(value), 2.0);
 }
 
+double relu(double value) {
+    return std::max(0.0, value);
+}
+
+double derivativeRelu(double value) {
+    if (value>0) return value;
+    else return 0.01*value;
+}
+
 double Activation::activate(Activation::method method, double value) {
     switch (method)
     {
@@ -23,6 +32,10 @@ double Activation::activate(Activation::method method, double value) {
 
     case Activation::TANH:
         return std::tanh(value);
+        break;
+
+    case Activation::RELU:
+        return relu(value);
         break;
     
     default:
@@ -40,6 +53,10 @@ double Activation::derivativeActivate(Activation::method method, double value) {
 
     case Activation::TANH:
         return derivativeTanh(value);
+        break;
+
+    case Activation::RELU:
+        return derivativeRelu(value);
         break;
     
     default:

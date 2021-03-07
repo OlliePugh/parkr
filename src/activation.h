@@ -4,7 +4,8 @@
 struct Activation {
     enum method { 
         SIGMOID,
-        TANH
+        TANH,
+        RELU
     };
     static double activate(Activation::method, double);
     static double derivativeActivate(Activation::method, double);

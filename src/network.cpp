@@ -190,8 +190,8 @@ double Network::train(int epochs, std::vector<std::vector<double>> trainingData,
             
             
             for (size_t j = 0; j < correctResult.size(); j++) {  // go through each row of data for that epoch
-                trainingLoss += (correctResult.at(j)-forwardPassResult.at(j));
-                trainingLoss *= trainingLoss;  // square the loss
+                trainingLoss += (correctResult.at(j)-forwardPassResult.at(j)) * (correctResult.at(j)-forwardPassResult.at(j));
+                //trainingLoss *= trainingLoss;  // square the loss
             }
             
             backPropogate(this, correctResult, forwardPassResult, stepSize);
