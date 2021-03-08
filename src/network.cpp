@@ -97,112 +97,137 @@ std::vector<double> Network::forwardPass(std::vector<double> inputValues, bool p
         }
     }
     return outputValues;
-}
+} 
 
-void backPropogate(Network* network, std::vector<double> expectedResults, std::vector<double> obtainedResults, double stepSize) {
-    double delta;  // store current delta of node
-    double activationDerivative;  // store the value of the node put through the integrated activation function
-    double sumOfOutputs;  // the sum of all of the weights for the inputs
+typedef std::tuple<std::map<Link*, double>, std::map<Node*, double>> nodechangemap_t;
+typedef std::map<Node*, double> deltamap_t;
 
-    std::map<Link*, double> sumWeightMap;  // stores the sum of the updates weights (this will need to be divided by the toatl number of rows)
-    std::map<Node*, double> sumBiasMap;
-    std::vector<double> prevLayerDeltas;
-    std::vector<double> currentDeltas;
+std::map<Node*, double> generateDeltas(Network* network, std::vector<double> *expectedResults) {  // will only work if called while value are still stored in the nodes 
+    std::map<Node*, double> deltaMap;
+
+    // generate deltas for output nodes
+    Layer* outputLayer = network->getLayers().back();
     
-    std::vector<Node*> outputNodes = network->getLayers().at(network->getLayers().size()-1)->getNodes();
+    for (size_t i = 0; i < outputLayer->getNodes().size(); i++)  {
+        Node* currentNode = outputLayer->getNodes().at(i);
 
-            for (size_t outputNode = 0; outputNode < outputNodes.size(); outputNode++) {  // for each output node
-                Node* currentNode = outputNodes.at(outputNode);
+        double derivedValue = Activation::derivativeActivate(network->getActivationMethod(), currentNode->getValue());
+        deltaMap[currentNode] = (expectedResults->at(i)-currentNode->getValue())*(derivedValue);
+    }
+    
+    // for all other layers
+    for (int i = network->getLayers().size() - 2; i >= 0; i--) {  // loop in reverse order
+        Layer* currentLayer = network->getLayers().at(i);
+        for (size_t j = 0; j < currentLayer->getNodes().size(); j++) {  // for every node in the layer
+            Node* currentNode = currentLayer->getNodes().at(j);
 
-                activationDerivative = Activation::derivativeActivate(network->getActivationMethod(), currentNode->getValue());
-                delta = (expectedResults.at(outputNode)-currentNode->getValue()) * activationDerivative;  // calculate delta
-                prevLayerDeltas.push_back(delta);
-
-                sumBiasMap[currentNode] += (currentNode->getBias() + (stepSize * delta * 1));
-            } 
-
-            for (int hiddenLayer = network->getLayers().size() - 2; hiddenLayer >= 0; hiddenLayer--) {  // for each hidden layer
-                Layer* currentLayer = network->getLayers().at(hiddenLayer);
-                currentDeltas.clear();  // clear the current deltas vector
-                for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {  // for each node in the layer
-                    Node* currentNode = currentLayer->getNodes().at(nodeCounter);
-
-                    activationDerivative = Activation::derivativeActivate(network->getActivationMethod(), currentNode->getValue());
-                    sumOfOutputs = 0;  // reset the sum of outputs value
-
-            activationDerivative = currentNode->getValue() * (1-currentNode->getValue());  // calculate derived output value
-            sumOfOutputs = 0;  // reset the sum of outputs value
-
-            for (size_t linkCounter = 0; linkCounter < currentNode->getOutLinks().size(); linkCounter++) {
-                sumOfOutputs += (currentNode->getOutLinks().at(linkCounter)->getWeight()*prevLayerDeltas.at(linkCounter));
-            }
-
-            delta = sumOfOutputs*activationDerivative;
-            currentDeltas.push_back(delta);  // add delta to current deltas for the next layer 
-        }
-
-        // once all the deltas have been calculated go through and update all weights and bias' for that layer
-
-        for (size_t nodeCounter = 0; nodeCounter < currentLayer->getNodes().size(); nodeCounter++) {
-            Node* currentNode = currentLayer->getNodes().at(nodeCounter);
-            for (size_t linkCounter = 0; linkCounter < currentNode->getOutLinks().size(); linkCounter++) {  // for each out link of that node
-                Link* currentLink = currentNode->getOutLinks().at(linkCounter);
-
-                sumWeightMap[currentLink] += currentLink->getWeight()+(stepSize*prevLayerDeltas.at(linkCounter)*currentNode->getRawValue());
-            }
-            if (currentLayer->getType() != LayerType::INPUT) {
-                sumBiasMap[currentNode] += (currentNode->getBias() + (stepSize * currentDeltas.at(nodeCounter) * 1));
-            }
+            double derivedValue = Activation::derivativeActivate(network->getActivationMethod(), currentNode->getValue());
             
+            double sumOfDeltaWeights=0;
+
+            for (size_t outLinksCounter = 0; outLinksCounter < currentNode->getOutLinks().size(); outLinksCounter++) {  // for each outlink of the node
+                Link* currentLink = currentNode->getOutLinks().at(outLinksCounter);
+                sumOfDeltaWeights += currentLink->getWeight() * deltaMap[currentLink->getChild()];  // add the weight of the node to the delta of the node it points to
+            }
+
+            deltaMap[currentNode] = sumOfDeltaWeights * derivedValue;
         }
-
-        prevLayerDeltas.clear();
-        prevLayerDeltas = currentDeltas;
     }
-
-    std::map<Link*, double>::iterator weightIt = sumWeightMap.begin();
-    for (auto weightIt = sumWeightMap.begin(); weightIt != sumWeightMap.end(); ++weightIt)  {  // for each node in the map
-        weightIt->first->setWeight((weightIt->second)/obtainedResults.size());  // divide the changes to make to the weight by the total amounts of data it has been trained on
-    }
-
-    std::map<Node*, double>::iterator biasIt = sumBiasMap.begin();
-    for (auto biasIt = sumBiasMap.begin(); biasIt != sumBiasMap.end(); ++biasIt)  {  // for each node in the map
-        biasIt->first->setBias((biasIt->second)/obtainedResults.size());  // divide the changes to make to the weight by the total amounts of data it has been trained on
-    }
-        
+    
+    return deltaMap;
 }
 
+nodechangemap_t generateChanges(Network* network, deltamap_t* deltaMap, double stepSize) {
+    std::map<Link*, double> weightMap;  // create a map to store the changes to the weights
+    std::map<Node*, double> biasMap;  // create a map to store the changes to bias
+
+    for (size_t i = 0; i < network->getLayers().size(); i++)  {  // for all layers
+        Layer* currentLayer = network->getLayers().at(i);
+
+        for (size_t j = 0; j < currentLayer->getNodes().size(); j++){  // for each node in the layer
+            Node* currentNode = currentLayer->getNodes().at(j);
+
+            // calculate weights
+
+            for (size_t k = 0; k < currentNode->getOutLinks().size(); k++) {  // for each out link of the layer
+                Link* currentLink = currentNode->getOutLinks().at(k);
+                double weight = currentLink->getWeight();
+                double delta = (*deltaMap)[currentLink->getChild()];
+                double parentVal = currentLink->getParent()->getValue();
+
+                weightMap[currentLink] = currentLink->getWeight() + (stepSize *  (*deltaMap)[currentLink->getChild()] * currentLink->getParent()->getValue());
+            }
+
+            // calculate new bias
+            biasMap[currentNode] = currentNode->getBias() + (stepSize * (*deltaMap)[currentNode]);
+        }
+    }
+    
+    return std::make_tuple(weightMap, biasMap);
+
+}
+void backPropogate(Network* network, std::vector<nodechangemap_t> deltaMaps) {
+
+    std::map<Link*, double> finalWeightValues;
+
+    for (size_t mapCount = 0; mapCount < deltaMaps.size(); mapCount++) {  // for each map of values that each training data would like to change
+        std::map<Link*, double>* currentWeightMap = &std::get<0>(deltaMaps.at(mapCount));
+
+        std::map<Link*, double>::iterator weightIt = currentWeightMap->begin();
+        for (auto weightIt = currentWeightMap->begin(); weightIt != currentWeightMap->end(); ++weightIt)  {  // for each node in the map
+            finalWeightValues[weightIt->first] += weightIt->second / deltaMaps.size(); // add the change to the final value map
+        }
+    }
+
+    std::map<Link*, double>::iterator finalWeightIt = finalWeightValues.begin();
+    for (auto finalWeightIt = finalWeightValues.begin(); finalWeightIt != finalWeightValues.end(); ++finalWeightIt)  {  // for each node in the map
+        finalWeightIt->first->setWeight(finalWeightIt->second);  // divide the changes to make to the weight by the total amounts of data it has been trained on
+    }
+
+    std::map<Node*, double> finalBiasValues; 
+
+    for (size_t mapCount = 0; mapCount < deltaMaps.size(); mapCount++) {  // for each map of values that each training data would like to change
+        std::map<Node*, double>* finalBiasMap = &std::get<1>(deltaMaps.at(mapCount));
+
+        std::map<Node*, double>::iterator biasIt = finalBiasMap->begin();
+        for (auto biasIt = finalBiasMap->begin(); biasIt != finalBiasMap->end(); ++biasIt)  {  // for each node in the map
+            finalBiasValues[biasIt->first] += biasIt->second / deltaMaps.size(); // add the change to the final value map
+        }
+    }
+
+    std::map<Node*, double>::iterator finalBiasIt = finalBiasValues.begin();
+    for (auto finalBiasIt = finalBiasValues.begin(); finalBiasIt != finalBiasValues.end(); ++finalBiasIt)  {  // for each node in the map
+        finalBiasIt->first->setBias(finalBiasIt->second);  // set the bias of the node to the average of all the deltas
+    }
+}
+    
 double Network::train(int epochs, std::vector<std::vector<double>> trainingData, std::vector<std::vector<double>> expectedResults, double stepSize) {
     
     if (expectedResults.size() != trainingData.size()) throw std::invalid_argument("Amount of expected results does not match amount of training data");
-    
-    std::vector<double> forwardPassResult;
-    std::vector<double>correctResult;
-    double trainingLoss;
-    int amountOfOutputs = trainingData.at(0).size()*expectedResults.at(0).size();
-    
-    for (size_t epoch = 0; epoch < epochs; epoch++) {
-       trainingLoss=0;
-       for (size_t i = 0; i < trainingData.size(); i++) {  // for each row of training data 
 
-            forwardPassResult = this->forwardPass(trainingData.at(i));  // do a forward pass
-            correctResult = expectedResults.at(i);  // get the expected value for that row
-            
-            
-            for (size_t j = 0; j < correctResult.size(); j++) {  // go through each row of data for that epoch
-                trainingLoss += (correctResult.at(j)-forwardPassResult.at(j)) * (correctResult.at(j)-forwardPassResult.at(j));
-                //trainingLoss *= trainingLoss;  // square the loss
+    for (size_t epoch = 0; epoch < epochs; epoch++) {
+        double trainingLoss = 0.0;
+        
+        std::vector<nodechangemap_t> changeMap;
+
+        for (size_t i = 0; i < trainingData.size(); i++) {  // for each row of training data  
+            std::vector<double> forwardPassResults = this->forwardPass(trainingData.at(i));  // perform a forward pass
+
+            deltamap_t deltas = generateDeltas(this, &expectedResults.at(i));  // generate the deltas 
+            changeMap.push_back(generateChanges(this, &deltas, stepSize));  // add the requested changes from that forward pass
+
+            for (size_t outputNodeCount = 0; outputNodeCount < expectedResults.at(0).size(); outputNodeCount++) {  // add the loss for that pass
+                double toMult = expectedResults.at(i).at(outputNodeCount)-forwardPassResults.at(outputNodeCount);
+                trainingLoss += (toMult*toMult) / (expectedResults.at(0).size() * expectedResults.size());
             }
             
-            backPropogate(this, correctResult, forwardPassResult, stepSize);
-            
-       } 
-        std::cout << trainingLoss/amountOfOutputs << " training loss " << std::endl;
+        }
 
+        backPropogate(this, changeMap);  // apply changes to the weights and bias
+
+        std::cout << trainingLoss << " training loss at epoch " << epoch+1 << std::endl;  // display the loss for that forward pass
+        trainingLoss = 0;
     }
-
-    return trainingLoss/amountOfOutputs;
-    
 }
 
 void Network::save(std::string fileName) {  // save the network to a .prkr file

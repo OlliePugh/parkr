@@ -14,7 +14,6 @@ Link::Link(Node* parent, Node* child) {
 
     this->weight = (double)rand()/RAND_MAX*(maxBiasWeight*2)-maxBiasWeight;//float in range -1 to 1
     child->setBias((double)rand()/RAND_MAX*(maxBiasWeight*2)-maxBiasWeight);//float in range -1 to 1
-
     parent->addOutLink(this);  // add the link to the out links of the parent node
     child->addInLink(this);  // add the link to the in of the child node
 }

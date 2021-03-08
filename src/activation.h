@@ -3,6 +3,7 @@
 
 struct Activation {
     enum method { 
+        LINEAR,
         SIGMOID,
         TANH,
         RELU

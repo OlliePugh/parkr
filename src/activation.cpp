@@ -26,6 +26,10 @@ double derivativeRelu(double value) {
 double Activation::activate(Activation::method method, double value) {
     switch (method)
     {
+    case Activation::LINEAR:
+        return value;
+        break;
+
     case Activation::SIGMOID:
         return sigmoid(value);
         break;
@@ -47,6 +51,10 @@ double Activation::activate(Activation::method method, double value) {
 double Activation::derivativeActivate(Activation::method method, double value) {
     switch (method)
     {
+    case Activation::LINEAR:
+        return 1.0;
+        break;
+
     case Activation::SIGMOID:
         return derivativeSigmoid(value);
         break;
