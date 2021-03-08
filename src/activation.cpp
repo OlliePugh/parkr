@@ -15,7 +15,7 @@ double derivativeTanh(double value) {
 }
 
 double relu(double value) {
-    return std::max(0.0, value);
+    return std::fmax(0.0, value);
 }
 
 double derivativeRelu(double value) {

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h>
+#include <cmath>
 #include <time.h>
 #include <stdexcept>
 #include <string>
@@ -158,8 +159,8 @@ nodechangemap_t generateChanges(Network* network, deltamap_t* deltaMap, double s
                 weightMap[currentLink] = currentLink->getWeight() + (stepSize *  (*deltaMap)[currentLink->getChild()] * currentLink->getParent()->getValue());
             }
 
-            // calculate new bias
-            biasMap[currentNode] = currentNode->getBias() + (stepSize * (*deltaMap)[currentNode]);
+            // calculate new bias if not input layer
+            if(i!=0) biasMap[currentNode] = currentNode->getBias() + (stepSize * (*deltaMap)[currentNode]);
         }
     }
     
@@ -215,7 +216,7 @@ double _train(Network* network, std::vector<std::vector<double>> trainingData, s
 
             for (size_t outputNodeCount = 0; outputNodeCount < expectedResults.at(0).size(); outputNodeCount++) {  // add the loss for that pass
                 double toMult = expectedResults.at(i).at(outputNodeCount)-forwardPassResults.at(outputNodeCount);
-                trainingLoss += (toMult*toMult) / (expectedResults.at(0).size() * expectedResults.size());
+                trainingLoss += std::pow(toMult,2.0) / (expectedResults.at(0).size() * expectedResults.size());
             }
             
         }
