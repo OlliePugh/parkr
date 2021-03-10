@@ -38,7 +38,7 @@ myNetwork.train(epochs, &trainingData, &expectedData);
 To perform a forward pass on the network you simply pass it a vector with each element as an input vaule.
 
 ```
-myNetwork.forwardPass({1,0},true);
+vector<double> myResult = myNetwork.forwardPass({1,0},true);
 ```
 
 If the last parameter in `forwardPass` is true the value of the forward pass will be printed, this is false by default. 
