@@ -1,6 +1,5 @@
 #include <iostream>
 #include <math.h>
-#include <cmath>
 #include <time.h>
 #include <stdexcept>
 #include <string>
@@ -203,20 +202,20 @@ void backPropogate(Network* network, std::vector<nodechangemap_t> deltaMaps) {
     }
 }
 
-double _train(Network* network, std::vector<std::vector<double>> trainingData, std::vector<std::vector<double>> expectedResults, double stepSize) {
+double _train(Network* network, dataset* trainingData, dataset* expectedResults, double stepSize) {
     double trainingLoss = 0.0;
         
         std::vector<nodechangemap_t> changeMap;
 
-        for (size_t i = 0; i < trainingData.size(); i++) {  // for each row of training data  
-            std::vector<double> forwardPassResults = network->forwardPass(trainingData.at(i));  // perform a forward pass
+        for (size_t i = 0; i < trainingData->size(); i++) {  // for each row of training data  
+            std::vector<double> forwardPassResults = network->forwardPass(trainingData->at(i));  // perform a forward pass
 
-            deltamap_t deltas = generateDeltas(network, &expectedResults.at(i));  // generate the deltas 
+            deltamap_t deltas = generateDeltas(network, &expectedResults->at(i));  // generate the deltas 
             changeMap.push_back(generateChanges(network, &deltas, stepSize));  // add the requested changes from that forward pass
 
-            for (size_t outputNodeCount = 0; outputNodeCount < expectedResults.at(0).size(); outputNodeCount++) {  // add the loss for that pass
-                double toMult = expectedResults.at(i).at(outputNodeCount)-forwardPassResults.at(outputNodeCount);
-                trainingLoss += std::pow(toMult,2.0) / (expectedResults.at(0).size() * expectedResults.size());
+            for (size_t outputNodeCount = 0; outputNodeCount < expectedResults->at(0).size(); outputNodeCount++) {  // add the loss for that pass
+                double toMult = expectedResults->at(i).at(outputNodeCount)-forwardPassResults.at(outputNodeCount);
+                trainingLoss += std::pow(toMult,2.0) / (expectedResults->at(0).size() * expectedResults->size());
             }
             
         }
@@ -226,9 +225,9 @@ double _train(Network* network, std::vector<std::vector<double>> trainingData, s
         return trainingLoss;
 }
 
-void Network::train(int epochs, std::vector<std::vector<double>> trainingData, std::vector<std::vector<double>> expectedResults, double stepSize) {
+void Network::train(int epochs, dataset* trainingData, dataset* expectedResults, double stepSize) {
     
-    if (expectedResults.size() != trainingData.size()) throw std::invalid_argument("Amount of expected results does not match amount of training data");
+    if (expectedResults->size() != trainingData->size()) throw std::invalid_argument("Amount of expected results does not match amount of training data");
 
     for (size_t epoch = 0; epoch < epochs; epoch++) {
         double trainingLoss = _train(this, trainingData, expectedResults, stepSize);
@@ -239,21 +238,21 @@ void Network::train(int epochs, std::vector<std::vector<double>> trainingData, s
 
 typedef std::vector<std::vector<std::vector<double>>> batchVector;
 
-void Network::batchTrain(int epochs, std::vector<std::vector<double>> trainingData, std::vector<std::vector<double>> expectedResults, int batchSize, double stepSize) {
-    if (expectedResults.size() != trainingData.size()) throw std::invalid_argument("Amount of expected results does not match amount of training data");
-    if (trainingData.size() < batchSize) throw std::invalid_argument("Batch size can not be greater than training results");
+void Network::batchTrain(int epochs, dataset* trainingData, dataset* expectedResults, int batchSize, double stepSize) {
+    if (expectedResults->size() != trainingData->size()) throw std::invalid_argument("Amount of expected results does not match amount of training data");
+    if (trainingData->size() < batchSize) throw std::invalid_argument("Batch size can not be greater than training results");
 
     batchVector trainingBatches;
     batchVector expectedBatches;
 
     //generate batches
     int startVal = 0;
-    for (size_t i = 0; i < std::ceil((double) trainingData.size() / (double)  batchSize); i++) {
-        int endingIndex = std::min((int) trainingData.size()-1, startVal+batchSize);
+    for (size_t i = 0; i < std::ceil((double) trainingData->size() / (double)  batchSize); i++) {
+        int endingIndex = std::min((int) trainingData->size()-1, startVal+batchSize);
 
         // slice the vectors into batches
-        std::vector<std::vector<double>> trainBatch = std::vector<std::vector<double>>(trainingData.begin() + startVal, trainingData.begin()+endingIndex);
-        std::vector<std::vector<double>> expectBatch = std::vector<std::vector<double>>(expectedResults.begin() + startVal, expectedResults.begin()+endingIndex);
+        std::vector<std::vector<double>> trainBatch = std::vector<std::vector<double>>(trainingData->begin() + startVal, trainingData->begin()+endingIndex);
+        std::vector<std::vector<double>> expectBatch = std::vector<std::vector<double>>(expectedResults->begin() + startVal, expectedResults->begin()+endingIndex);
 
         trainingBatches.push_back(trainBatch);
         expectedBatches.push_back(expectBatch);
@@ -264,7 +263,7 @@ void Network::batchTrain(int epochs, std::vector<std::vector<double>> trainingDa
     double trainingLoss = 0;
     for (size_t epoch = 0; epoch < epochs; epoch++) {  // for each epoch
         for (size_t batchCounter = 0; batchCounter < trainingBatches.size(); batchCounter++) {
-            trainingLoss += _train(this, trainingBatches.at(batchCounter), expectedBatches.at(batchCounter), stepSize);
+            trainingLoss += _train(this, &(trainingBatches.at(batchCounter)), &(expectedBatches.at(batchCounter)), stepSize);
         }
 
         std::cout << trainingLoss/(double)trainingBatches.size() << " training loss at epoch " << epoch+1 << std::endl;  // display the loss for that forward pass
