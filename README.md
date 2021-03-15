@@ -12,7 +12,7 @@ It is very basic to get a neural network up and running and getting results quic
 To create a network you just need to specify how many input nodes, how many output nodes, a vector that contains the amount of nodes in each hidden layer, and the activation function you want to use.
 
 ```
-Network myNetwork = Network(6, 2, {{4,4}}, Activation::TANH);
+Network myNetwork = Network(6, 2, {4,4}, Activation::TANH);
 ```
 
 This will create a network with 6 input nodes, 2 hidden layers, both with 4 nodes each and 2 output nodes and it will use the tanh activation function.
