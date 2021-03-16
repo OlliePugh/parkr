@@ -6,7 +6,8 @@ struct Activation {
         LINEAR,
         SIGMOID,
         TANH,
-        RELU
+        RELU,
+        LEAKY_RELU
     };
     static double activate(Activation::method, double);
     static double derivativeActivate(Activation::method, double);

@@ -15,12 +15,21 @@ double derivativeTanh(double value) {
 }
 
 double relu(double value) {
-    return std::fmax(0.0, value);
+    return std::fmax(0, value);
 }
 
 double derivativeRelu(double value) {
-    if (value>0) return value;
-    else return 0.01*value;
+    if (value < 0) return 0;
+    else return 1;
+}
+
+double leakyRelu(double value) {
+    return std::fmax(0.01*value, value);
+}
+
+double derivativeLeakyRelu(double value) {
+    if (value < 0) return 0.01;
+    else return 1;
 }
 
 double Activation::activate(Activation::method method, double value) {
@@ -40,6 +49,10 @@ double Activation::activate(Activation::method method, double value) {
 
     case Activation::RELU:
         return relu(value);
+        break;
+
+    case Activation::LEAKY_RELU:
+        return leakyRelu(value);
         break;
     
     default:
@@ -65,6 +78,10 @@ double Activation::derivativeActivate(Activation::method method, double value) {
 
     case Activation::RELU:
         return derivativeRelu(value);
+        break;
+
+    case Activation::LEAKY_RELU:
+        return derivativeLeakyRelu(value);
         break;
     
     default:
