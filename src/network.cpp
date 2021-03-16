@@ -232,7 +232,7 @@ void Network::train(int epochs, dataset* trainingData, dataset* expectedResults,
 
     for (size_t epoch = 0; epoch < epochs; epoch++) {
         double trainingLoss = _train(this, trainingData, expectedResults, validationData, expectedValidation, stepSize);
-        if (!(options & Network::trainingOptions::silencePrintLoss)) {{
+        if (!(options & Network::trainingOptions::silencePrintLoss)) {
             std::cout << trainingLoss << " training loss at epoch " << epoch+1 << std::endl;  // display the loss for that forward pass
         }
         trainingLoss = 0;
