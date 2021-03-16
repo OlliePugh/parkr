@@ -202,28 +202,38 @@ void backPropogate(Network* network, std::vector<nodechangemap_t> deltaMaps) {
     }
 }
 
-double _train(Network* network, dataset* trainingData, dataset* expectedResults, dataset* validationData, dataset* validationExpectedResults, double stepSize) {
+std::tuple<double, double> _train(Network* network, dataset* trainingData, dataset* expectedResults, dataset* validationData, dataset* validationExpectedResults, double stepSize) {
     std::vector<nodechangemap_t> changeMap;
+    double trainingLoss = 0.0;
+
     for (size_t i = 0; i < trainingData->size(); i++) {  // for each row of training data  
         std::vector<double> forwardPassResults = network->forwardPass(trainingData->at(i));  // perform a forward pass
         deltamap_t deltas = generateDeltas(network, &expectedResults->at(i));  // generate the deltas 
         changeMap.push_back(generateChanges(network, &deltas, stepSize));  // add the requested changes from that forward pass
-            
+        
+         for (size_t outputNodeCount = 0; outputNodeCount < expectedResults->at(0).size(); outputNodeCount++) {  // add the loss for that pass
+            double toMult = expectedResults->at(i).at(outputNodeCount)-forwardPassResults.at(outputNodeCount);
+            trainingLoss += std::pow(toMult,2.0) / (expectedResults->at(0).size() * expectedResults->size());
+        }
     }
     backPropogate(network, changeMap);  // apply changes to the weights and bias
 
-    //calaculte loss
-    double trainingLoss = 0.0;
+    //calaculte validation loss
+    double validationLoss = 0.0;
     for (size_t validationCounter = 0; validationCounter < validationData->size(); validationCounter++) {
         for (size_t outputNodeCount = 0; outputNodeCount < validationExpectedResults->at(0).size(); outputNodeCount++) {  // add the loss for that pass
             std::vector<double> result = network->forwardPass(validationData->at(validationCounter));  // pass validation data forward
             
             double toMult = validationExpectedResults->at(validationCounter).at(outputNodeCount)-result.at(outputNodeCount);
-            trainingLoss += std::pow(toMult,2.0) / (validationExpectedResults->at(0).size() * validationExpectedResults->size());
+            validationLoss += std::pow(toMult,2.0) / (validationExpectedResults->at(0).size() * validationExpectedResults->size());
         }
     }
 
-    return trainingLoss;
+    return std::make_tuple(trainingLoss, validationLoss);
+}
+
+void outputLoss(std::tuple<double, double> losses, int epoch) {
+    std::cout << "Epoch " << epoch << " TLoss: " << std::get<0>(losses) << " VLoss: " << std::get<1>(losses) << std::endl;
 }
 
 void Network::train(int epochs, dataset* trainingData, dataset* expectedResults, dataset* validationData, dataset* expectedValidation, unsigned char options, double stepSize) {
@@ -231,11 +241,10 @@ void Network::train(int epochs, dataset* trainingData, dataset* expectedResults,
     if (expectedResults->size() != trainingData->size()) throw std::invalid_argument("Amount of expected results does not match amount of training data");
 
     for (size_t epoch = 0; epoch < epochs; epoch++) {
-        double trainingLoss = _train(this, trainingData, expectedResults, validationData, expectedValidation, stepSize);
+        std::tuple<double, double> losses = _train(this, trainingData, expectedResults, validationData, expectedValidation, stepSize);
         if (!(options & Network::trainingOptions::silencePrintLoss)) {
-            std::cout << trainingLoss << " training loss at epoch " << epoch+1 << std::endl;  // display the loss for that forward pass
+            outputLoss(losses, epoch+1);
         }
-        trainingLoss = 0;
     }
 }
 
@@ -264,14 +273,18 @@ void Network::batchTrain(int epochs, dataset* trainingData, dataset* expectedRes
     }
     
     double trainingLoss = 0;
+    double validationLoss = 0;
     for (size_t epoch = 0; epoch < epochs; epoch++) {  // for each epoch
         for (size_t batchCounter = 0; batchCounter < trainingBatches.size(); batchCounter++) {
-            trainingLoss += _train(this, &(trainingBatches.at(batchCounter)), &(expectedBatches.at(batchCounter)), validationData, expectedValidation, stepSize);
+            std::tuple<double, double> losses = _train(this, &(trainingBatches.at(batchCounter)), &(expectedBatches.at(batchCounter)), validationData, expectedValidation, stepSize);
+            trainingLoss += std::get<0>(losses)/(double)trainingBatches.size();
+            validationLoss +=std::get<1>(losses)/(double)trainingBatches.size();
         }
         if (!(options & Network::trainingOptions::silencePrintLoss)) {
-            std::cout << trainingLoss/(double)trainingBatches.size() << " training loss at epoch " << epoch+1 << std::endl;  // display the loss for that forward pass
+            outputLoss(std::make_tuple(trainingLoss, validationLoss), epoch+1);
         }
         trainingLoss = 0;
+        validationLoss = 0;
     }
 }
 
