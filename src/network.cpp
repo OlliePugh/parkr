@@ -226,20 +226,22 @@ double _train(Network* network, dataset* trainingData, dataset* expectedResults,
     return trainingLoss;
 }
 
-void Network::train(int epochs, dataset* trainingData, dataset* expectedResults, dataset* validationData, dataset* expectedValidation, double stepSize) {
+void Network::train(int epochs, dataset* trainingData, dataset* expectedResults, dataset* validationData, dataset* expectedValidation, unsigned char options, double stepSize) {
     
     if (expectedResults->size() != trainingData->size()) throw std::invalid_argument("Amount of expected results does not match amount of training data");
 
     for (size_t epoch = 0; epoch < epochs; epoch++) {
         double trainingLoss = _train(this, trainingData, expectedResults, validationData, expectedValidation, stepSize);
-        std::cout << trainingLoss << " training loss at epoch " << epoch+1 << std::endl;  // display the loss for that forward pass
+        if (!(options & Network::trainingOptions::silencePrintLoss)) {{
+            std::cout << trainingLoss << " training loss at epoch " << epoch+1 << std::endl;  // display the loss for that forward pass
+        }
         trainingLoss = 0;
     }
 }
 
 typedef std::vector<std::vector<std::vector<double>>> batchVector;
 
-void Network::batchTrain(int epochs, dataset* trainingData, dataset* expectedResults, dataset* validationData, dataset* expectedValidation, int batchSize, double stepSize) {
+void Network::batchTrain(int epochs, dataset* trainingData, dataset* expectedResults, dataset* validationData, dataset* expectedValidation, int batchSize, unsigned char options, double stepSize) {
     if (expectedResults->size() != trainingData->size()) throw std::invalid_argument("Amount of expected results does not match amount of training data");
     if (trainingData->size() < batchSize) throw std::invalid_argument("Batch size can not be greater than training results");
 
@@ -266,8 +268,9 @@ void Network::batchTrain(int epochs, dataset* trainingData, dataset* expectedRes
         for (size_t batchCounter = 0; batchCounter < trainingBatches.size(); batchCounter++) {
             trainingLoss += _train(this, &(trainingBatches.at(batchCounter)), &(expectedBatches.at(batchCounter)), validationData, expectedValidation, stepSize);
         }
-
-        std::cout << trainingLoss/(double)trainingBatches.size() << " training loss at epoch " << epoch+1 << std::endl;  // display the loss for that forward pass
+        if (!(options & Network::trainingOptions::silencePrintLoss)) {
+            std::cout << trainingLoss/(double)trainingBatches.size() << " training loss at epoch " << epoch+1 << std::endl;  // display the loss for that forward pass
+        }
         trainingLoss = 0;
     }
 }
