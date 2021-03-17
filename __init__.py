@@ -51,7 +51,7 @@ class Network:
         node_value_matrix = [inp]
         
         for i in range(len(self.layer_sizes)-1):  # for each layer
-            raw_out = np.dot(node_value_matrix[-1], self.weight_matrix[i])
+            raw_out = np.dot(node_value_matrix[i], self.weight_matrix[i])
             node_value_matrix.append(raw_out)
             activated_node_value_matrix.append(sigmoid(raw_out))
 
@@ -68,17 +68,23 @@ class Network:
     def __backprop(self, raw_result, activated_result, expected, step_size):
         prev_layer_error = None
         prev_cost = None
+
+        # calculate layer error TODO this can be changeed to loop through the results and have the key as the layer
         for i in (range(len(self.layer_sizes)-1, 0 ,-1)):  # for all layers but the input one
             if i == len(self.layer_sizes)-1:  # output layer
                 curr_layer_error = (activated_result[-1] - expected) * derivative_sigmoid(activated_result[-1])             
             else:
-                curr_layer_error = prev_layer_error * self.weight_matrix[i-1] * derivative_sigmoid(activated_result[i])
+                curr_layer_error =self.weight_matrix[i] * prev_layer_error * derivative_sigmoid(activated_result[i])
 
-            curr_cost = curr_layer_error * raw_result[i]
+            # get cost derivative 
+            curr_cost = curr_layer_error * raw_result[i-1]  
 
-            self.weight_matrix[i-1] -= curr_cost * step_size
-            self.bias_matrix[i-1] += curr_layer_error * step_size  # FIXME Something wrong with the logic here
+            # update weights and bias'
+            delta = curr_cost * step_size
+            self.weight_matrix[i-1] -= delta
+            #self.bias_matrix[i-1]+= curr_layer_error * step_size  # TODO Impliment bias logic
 
+            # set currents to prevs for next loop
             prev_cost = curr_cost
             prev_layer_error = curr_layer_error
 
