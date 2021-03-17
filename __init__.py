@@ -4,8 +4,6 @@ import json
 import warnings
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
 
-#https://ml-cheatsheet.readthedocs.io/en/latest/nn_concepts.html
-
 class Network:
     def __init__(self, input_nodes, hidden_layers, output_nodes, activation_function):
         self.layer_sizes = [input_nodes] + hidden_layers + [output_nodes]  # a list that holds the amount of nodes in each layer
@@ -47,12 +45,10 @@ class Network:
 
 
     def feed_forward(self, inp, return_entire_network=False):
-        for layer in self.weight_matrix:
-            print(layer, end="\n\n")
         activated_node_value_matrix = [np.array(inp)]
         node_value_matrix = [np.array(inp)]
         
-        for i in range(len(self.layer_sizes)-1):  # for each layer
+        for i in range(len(self.layer_sizes)-1):  # for each layer after the input layer
             raw_out = np.dot(activated_node_value_matrix[i], self.weight_matrix[i])
             raw_out = raw_out + self.bias_matrix[i]
             node_value_matrix.append(raw_out)
@@ -83,12 +79,14 @@ class Network:
                 delta_map.insert(0,(delta * deriv_sigmoid))
         
         for i in range(len(self.layer_sizes)-1):  # for each layer from the first layer
+            
             #  update the weights
-            weight_change = (step_size * (np.dot(delta_map[i], activated_result[i].reshape(1,-1))))
+            weight_change = (step_size * (np.dot(activated_result[i].reshape(-1,1), delta_map[i].reshape(1,-1))))
             self.weight_matrix[i] = self.weight_matrix[i] + weight_change.reshape(self.weight_matrix[i].shape)
-            #  update the bias
+            
+        for i in range(len(self.bias_matrix)):
             bias_change = (step_size * delta_map[i])
-            self.bias_matrix[i] = self.bias_matrix[i] + bias_change
+            self.bias_matrix[i] = self.bias_matrix[i] + bias_change.reshape((1,-1))
 
 
     def save(self, file_name):
