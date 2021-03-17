@@ -1,4 +1,5 @@
 from .activation import Activation, ActivationMethods
+from typing import List, Tuple
 
 import numpy as np
 import json
@@ -7,7 +8,18 @@ import warnings
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
 
 class Network:
-    def __init__(self, input_nodes, hidden_layers, output_nodes, activation_function):
+    def __init__(self, input_nodes: int, hidden_layers: List[int], output_nodes: int, activation_function: ActivationMethods):
+        """
+        Args:
+            input_nodes (int): Amount of input nodes in network
+            hidden_layers (List[int]): List of amount of nodes in each elements
+            output_nodes (int): Amount of output nodes in network
+            activation_function (ActivationMethods): Activation function to be used
+
+        Raises:
+            ValueError: Raised if the activation method is a valid ActivationMethod value
+        """
+
         if (not isinstance(activation_function, ActivationMethods)):
             raise ValueError("Unkown Activation Method")
         
@@ -16,19 +28,31 @@ class Network:
         self.__generate_weights(self.layer_sizes)
         self.__generate_bias(self.layer_sizes)
 
-    def __generate_weights(self, layer_sizes):
+    def __generate_weights(self, layer_sizes: List[int]) -> None:
+        """Generate the weights for the network
+
+        Args:
+            layer_sizes (List[int]): The amounts of nodes in each layers
+        """
         self.weight_matrix = []
 
         for index, amount_of_nodes in enumerate(self.layer_sizes[:-1]):  # for all layers but output
             self.weight_matrix.append(np.random.randn(amount_of_nodes, self.layer_sizes[index+1]) * np.sqrt(2.0/amount_of_nodes))
 
-    def __generate_bias(self, layer_sizes):
+    def __generate_bias(self, layer_sizes: List[int]) -> None:
+        """Generate the bias' for the network
+
+        Args:
+            layer_sizes (List[int]): The amounts of nodes in each layers
+        """
         self.bias_matrix = []
 
         for index, amount_of_nodes in enumerate(self.layer_sizes[1:]):  # for all layers but input as input nodes can not have bias
             self.bias_matrix.append(np.full((1, amount_of_nodes), 0.1))
 
-    def print(self):
+    def print(self) -> None:
+        """Print the structure of the network to the console
+        """
         curr_char = 65
         for i, node_count in enumerate(self.layer_sizes):
             for j in range(node_count):
@@ -50,7 +74,16 @@ class Network:
             node_offset += len(cols)
 
 
-    def feed_forward(self, inp, return_entire_network=False):
+    def feed_forward(self, inp: List[List[float]], return_entire_network: bool=False) -> Tuple[List[List[float]], List[List[float]]]:
+        """Perform a forward pass on the network
+
+        Args:
+            inp (List[List[double]]): The input values to the network
+            return_entire_network (bool, optional): if true will return all of the network, not just the outputs. Defaults to False.
+
+        Returns:
+            (List[float], List[float]): A list of the raw values and the activated networks 
+        """
         activated_node_value_matrix = [np.array(inp)]
         node_value_matrix = [np.array(inp)]
         
@@ -65,12 +98,28 @@ class Network:
         else:
             return (node_value_matrix[-1], activated_node_value_matrix[-1])
 
-    def train(self, inp, expected, step_size=0.1):
-        for i in range(len(inp)):
-            raw_forward_pass, activated_forward_pass = self.feed_forward(inp[i], return_entire_network=True)
-            self.__backprop(raw_forward_pass, activated_forward_pass, expected[i], step_size)
+    def train(self, epochs:int, training_data:List[List[float]], step_size:float=0.1, **kwargs) -> None:
+        """Train the network
 
-    def __backprop(self, raw_result, activated_result, expected, step_size): 
+        Args:
+            epochs (int): Amount of epochs to be performed
+            training_data (List[List[float]]): Data to be trained on
+            step_size (float, optional): Learning rate, higher will cause larger changes. Defaults to 0.1.
+        """
+        for epoch in range(epochs):
+            for i in range(len(training_data[0])):
+                raw_forward_pass, activated_forward_pass = self.feed_forward(training_data[0][i], return_entire_network=True)
+                self.__backprop(raw_forward_pass, activated_forward_pass, training_data[1][i], step_size, **kwargs)
+
+    def __backprop(self, raw_result: List[List[float]], activated_result: List[List[float]], expected: List[float], step_size: float, **kwargs) -> None: 
+        """Perform back propogation on the network
+
+        Args:
+            raw_result (List[List[float]]): The result of the forward pass without activation applied
+            activated_result (List[List[float]]): The result of the forwad pass with the activation function applied
+            expected (List[float]): The expected values of the network
+            step_size (float): The learning rate of the network
+        """
         # create delta map
         delta_map = []
 
@@ -95,7 +144,12 @@ class Network:
             self.bias_matrix[i] = self.bias_matrix[i] + bias_change.reshape((1,-1))
 
 
-    def save(self, file_name):
+    def save(self, file_name: str) -> None:   # TODO Allow for loading from disk
+        """Save the network to disk
+
+        Args:
+            file_name (str): name of the file
+        """
         with open(f"{file_name}.json", "w+") as file:
             file.write(json.dumps(self.__dict__, default=self.__json_parser, indent=2))
         
@@ -109,8 +163,8 @@ class Network:
                 return obj.item()
         raise TypeError('Unknown type:', type(obj))
 
-def cost(yHat, y):
-    return 0.5 * (yHat - y)**2
+def cost(predicted, actual):
+    return 0.5 * (predicted - actual)**2
 
-def cost_prime(yHat, y):
-    return yHat - y
+def cost_prime(predicted, actual):
+    return predicted - actual

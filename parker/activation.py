@@ -9,7 +9,19 @@ class ActivationMethods(Enum):
 class Activation(ABC):
 
     @abstractmethod
-    def activate(method, value):
+    def activate(method: ActivationMethods, value: float) -> float:
+        """Perform activation method on a value
+
+        Args:
+            method (ActivationMethods): [description]
+            value (float): The value to be altered
+
+        Raises:
+            ValueError: Raised if unknown activation method specifed
+
+        Returns:
+            float: Value with the activation function applied
+        """
         
         if method == ActivationMethods.SIGMOID:
             return sigmoid(value)
@@ -20,7 +32,19 @@ class Activation(ABC):
         raise ValueError ("Unkown method specified")
 
     @abstractmethod
-    def derivative_activate(method, value):
+    def derivative_activate(method: ActivationMethods, value: float) -> float:
+        """Perform derivative activation method on a value
+
+        Args:
+            method (ActivationMethods): [description]
+            value (float): The value to be altered
+
+        Raises:
+            ValueError: Raised if unknown activation method specifed
+
+        Returns:
+            float: Value with the derivative activation function applied
+        """
         
         if method == ActivationMethods.SIGMOID:
             return derivative_sigmoid(value)
