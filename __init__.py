@@ -47,11 +47,14 @@ class Network:
 
 
     def feed_forward(self, inp, return_entire_network=False):
-        activated_node_value_matrix = [inp]
-        node_value_matrix = [inp]
+        for layer in self.weight_matrix:
+            print(layer, end="\n\n")
+        activated_node_value_matrix = [np.array(inp)]
+        node_value_matrix = [np.array(inp)]
         
         for i in range(len(self.layer_sizes)-1):  # for each layer
-            raw_out = np.dot(node_value_matrix[i], self.weight_matrix[i])
+            raw_out = np.dot(activated_node_value_matrix[i], self.weight_matrix[i])
+            raw_out = raw_out + self.bias_matrix[i]
             node_value_matrix.append(raw_out)
             activated_node_value_matrix.append(sigmoid(raw_out))
 
@@ -61,37 +64,38 @@ class Network:
             return (node_value_matrix[-1], activated_node_value_matrix[-1])
 
     def train(self, inp, expected, step_size=0.1):
-        for i in range(len(inp)-1):
+        for i in range(len(inp)):
             raw_forward_pass, activated_forward_pass = self.feed_forward(inp[i], return_entire_network=True)
             self.__backprop(raw_forward_pass, activated_forward_pass, expected[i], step_size)
 
-    def __backprop(self, raw_result, activated_result, expected, step_size):
-        prev_layer_error = None
-        prev_cost = None
+    def __backprop(self, raw_result, activated_result, expected, step_size): 
+        # create delta map
+        delta_map = []
 
-        # calculate layer error TODO this can be changeed to loop through the results and have the key as the layer
         for i in (range(len(self.layer_sizes)-1, 0 ,-1)):  # for all layers but the input one
             if i == len(self.layer_sizes)-1:  # output layer
-                curr_layer_error = (activated_result[-1] - expected) * derivative_sigmoid(activated_result[-1])             
+                derived =  derivative_sigmoid(activated_result[i])
+                delta = np.dot((expected-activated_result[i]), derived)
+                delta_map.insert(0,delta)
             else:
-                curr_layer_error =self.weight_matrix[i] * prev_layer_error * derivative_sigmoid(activated_result[i])
+                delta = np.dot(self.weight_matrix[i], delta_map[0].reshape((-1,1)))
+                deriv_sigmoid = derivative_sigmoid(activated_result[i]).reshape((-1,1))
+                delta_map.insert(0,(delta * deriv_sigmoid))
+        
+        for i in range(len(self.layer_sizes)-1):  # for each layer from the first layer
+            #  update the weights
+            weight_change = (step_size * (np.dot(delta_map[i], activated_result[i].reshape(1,-1))))
+            self.weight_matrix[i] = self.weight_matrix[i] + weight_change.reshape(self.weight_matrix[i].shape)
+            #  update the bias
+            bias_change = (step_size * delta_map[i])
+            self.bias_matrix[i] = self.bias_matrix[i] + bias_change
 
-            # get cost derivative 
-            curr_cost = curr_layer_error * raw_result[i-1]  
-
-            # update weights and bias'
-            delta = curr_cost * step_size
-            self.weight_matrix[i-1] -= delta
-            #self.bias_matrix[i-1]+= curr_layer_error * step_size  # TODO Impliment bias logic
-
-            # set currents to prevs for next loop
-            prev_cost = curr_cost
-            prev_layer_error = curr_layer_error
 
     def save(self, file_name):
         with open(f"{file_name}.json", "w+") as file:
             file.write(json.dumps(self.__dict__, default=self.__json_parser, indent=2))
         
+
     @staticmethod
     def __json_parser(obj):
         if type(obj).__module__ == np.__name__:
@@ -105,7 +109,7 @@ def sigmoid(value):
     return 1.0 / (1 + np.exp(-value))
 
 def derivative_sigmoid(value):
-    return sigmoid(value) * (1-sigmoid(value))
+    return value * (1-value)
 
 def relu(value):
     return np.maximum(0, value)
