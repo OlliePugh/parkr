@@ -36,6 +36,7 @@ class Network:
         for index, amount_of_nodes in enumerate(self.layer_sizes[:-1]):  # for all layers but output
             self.weight_matrix.append(np.random.randn(amount_of_nodes, self.layer_sizes[index+1]) * np.sqrt(2.0/amount_of_nodes))
 
+
     def __generate_bias(self, layer_sizes: List[int]) -> None:
         """Generate the bias' for the network
 
@@ -46,6 +47,7 @@ class Network:
 
         for index, amount_of_nodes in enumerate(self.layer_sizes[1:]):  # for all layers but input as input nodes can not have bias
             self.bias_matrix.append(np.full((1, amount_of_nodes), 0.1))
+
 
     def print(self) -> None:
         """Print the structure of the network to the console
@@ -103,43 +105,37 @@ class Network:
             training_data (List[List[float]]): Data to be trained on
             step_size (float, optional): Learning rate, higher will cause larger changes. Defaults to 0.1.
         """
-
+        last_cost = 0
         for epoch in range(epochs):
             costs = []
-            weight_changes = []
-            bias_changes = []
+
+            avg_weight_change = []
+
+            for layer in self.weight_matrix:
+                avg_weight_change.append(np.zeros(layer.shape))
+
+            avg_bias_change = []
+
+            for layer in self.bias_matrix:
+                avg_bias_change.append(np.zeros(layer.shape))
+                
+            
             for i in range(len(training_data[0])):
                 raw_forward_pass, activated_forward_pass = self.feed_forward(training_data[0][i], return_entire_network=True)
                 
                 row_weight_change, row_bias_change = self.__generate_changes(activated_forward_pass, training_data[1][i], step_size)
-                
-                weight_changes.append(row_weight_change)
-                bias_changes.append(row_bias_change)
-                costs.append(np.mean(cost(activated_forward_pass[-1], training_data[1])))
 
-            print(f"Epoch {epoch}: {round(np.mean(costs),7)}")
+                for index, layer in enumerate(row_weight_change):
+                    avg_weight_change[index] = avg_weight_change[index] + (layer/len(training_data[0]))
+                for index, layer in enumerate(row_bias_change):
+                    avg_bias_change[index] = avg_bias_change[index] + (layer.reshape((1,-1))/len(training_data[0]))
+     
+                costs.append(np.mean(cost(activated_forward_pass[-1], training_data[1][i])))
+
+            print(f"Epoch {epoch+1}: {round(np.mean(costs),7)}")
+            self.__backprop(avg_weight_change, avg_bias_change)  
 
             #FIXME only training for last row currently 
-
-            # get average weight and bias changes
-            avg_weight_change = []
-            for layer in weight_changes[0]:
-                avg_weight_change.append(np.zeros(layer.shape))
-
-            for weight_change in weight_changes:
-                for index, layer in enumerate(weight_change):
-                    avg_weight_change[index] += + layer/len(weight_changes)
-
-            avg_bias_change = []
-            for layer in bias_changes[0]:
-                avg_bias_change.append(np.zeros(layer.shape))
-
-            for bias_change in bias_changes:
-                for index, layer in enumerate(bias_change):
-                    avg_bias_change[index] += layer/len(bias_changes)
-
-            self.__backprop(avg_weight_change, avg_bias_change)  
-            
 
     def __generate_changes(self, activated_result: List[List[float]],  expected: List[float], step_size: float) -> Tuple[List[List[float]], List[List[float]]]:
         """Generate changes for the weights and bias' from a forward pass and the expected results
@@ -150,7 +146,7 @@ class Network:
             step_size (float): The learning rate of the network
 
         Returns:
-            Tuple[List[List[float]], List[List[float]]]: [description]
+            Tuple[List[List[float]], List[List[float]]]: First value is weight changes, seconc value is bias changes
         """
         
         # create delta map
@@ -191,7 +187,7 @@ class Network:
             self.weight_matrix[i] = self.weight_matrix[i] + weight_change[i].reshape(self.weight_matrix[i].shape)
             
         for i in range(len(self.bias_matrix)):
-            self.bias_matrix[i] = self.bias_matrix[i] + bias_change[i].reshape((1,-1))
+            self.bias_matrix[i] = self.bias_matrix[i] + bias_change[i]
 
 
     def save(self, file_name: str) -> None:   # TODO Allow for loading from disk
@@ -213,8 +209,10 @@ class Network:
                 return obj.item()
         raise TypeError('Unknown type:', type(obj))
 
+
 def cost(predicted, actual):
     return 0.5 * (predicted - actual)**2
+
 
 def cost_prime(predicted, actual):
     return predicted - actual
