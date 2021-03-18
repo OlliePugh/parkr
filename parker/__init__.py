@@ -128,7 +128,7 @@ class Network:
 
             for weight_change in weight_changes:
                 for index, layer in enumerate(weight_change):
-                    avg_weight_change[index] = avg_weight_change[index] + layer/len(weight_changes)
+                    avg_weight_change[index] += + layer/len(weight_changes)
 
             avg_bias_change = []
             for layer in bias_changes[0]:
@@ -136,7 +136,7 @@ class Network:
 
             for bias_change in bias_changes:
                 for index, layer in enumerate(bias_change):
-                    avg_bias_change[index] = avg_bias_change[index] + layer/len(bias_changes)
+                    avg_bias_change[index] += layer/len(bias_changes)
 
             self.__backprop(avg_weight_change, avg_bias_change)  
             
