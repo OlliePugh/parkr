@@ -4,9 +4,6 @@ from typing import List, Tuple
 import numpy as np
 import json
 
-import warnings
-warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
-
 class Network:
     def __init__(self, input_nodes: int, hidden_layers: List[int], output_nodes: int, activation_function: ActivationMethods):
         """
@@ -106,23 +103,58 @@ class Network:
             training_data (List[List[float]]): Data to be trained on
             step_size (float, optional): Learning rate, higher will cause larger changes. Defaults to 0.1.
         """
+
         for epoch in range(epochs):
+            costs = []
+            weight_changes = []
+            bias_changes = []
             for i in range(len(training_data[0])):
                 raw_forward_pass, activated_forward_pass = self.feed_forward(training_data[0][i], return_entire_network=True)
-                self.__backprop(raw_forward_pass, activated_forward_pass, training_data[1][i], step_size, **kwargs)
+                
+                row_weight_change, row_bias_change = self.__generate_changes(activated_forward_pass, training_data[1][i], step_size)
+                
+                weight_changes.append(row_weight_change)
+                bias_changes.append(row_bias_change)
+                costs.append(np.mean(cost(activated_forward_pass[-1], training_data[1])))
 
-    def __backprop(self, raw_result: List[List[float]], activated_result: List[List[float]], expected: List[float], step_size: float, **kwargs) -> None: 
-        """Perform back propogation on the network
+            print(f"Epoch {epoch}: {round(np.mean(costs),7)}")
+
+            #FIXME only training for last row currently 
+
+            # get average weight and bias changes
+            avg_weight_change = []
+            for layer in weight_changes[0]:
+                avg_weight_change.append(np.zeros(layer.shape))
+
+            for weight_change in weight_changes:
+                for index, layer in enumerate(weight_change):
+                    avg_weight_change[index] = avg_weight_change[index] + layer/len(weight_changes)
+
+            avg_bias_change = []
+            for layer in bias_changes[0]:
+                avg_bias_change.append(np.zeros(layer.shape))
+
+            for bias_change in bias_changes:
+                for index, layer in enumerate(bias_change):
+                    avg_bias_change[index] = avg_bias_change[index] + layer/len(bias_changes)
+
+            self.__backprop(avg_weight_change, avg_bias_change)  
+            
+
+    def __generate_changes(self, activated_result: List[List[float]],  expected: List[float], step_size: float) -> Tuple[List[List[float]], List[List[float]]]:
+        """Generate changes for the weights and bias' from a forward pass and the expected results
 
         Args:
-            raw_result (List[List[float]]): The result of the forward pass without activation applied
             activated_result (List[List[float]]): The result of the forwad pass with the activation function applied
             expected (List[float]): The expected values of the network
             step_size (float): The learning rate of the network
+
+        Returns:
+            Tuple[List[List[float]], List[List[float]]]: [description]
         """
+        
         # create delta map
         delta_map = []
-
         for i in (range(len(self.layer_sizes)-1, 0 ,-1)):  # for all layers but the input one
             if i == len(self.layer_sizes)-1:  # output layer
                 derived = Activation.derivative_activate(self.activation_function, activated_result[i])
@@ -132,16 +164,34 @@ class Network:
                 delta = np.dot(self.weight_matrix[i], delta_map[0].reshape((-1,1)))
                 deriv_sigmoid = Activation.derivative_activate(self.activation_function, activated_result[i].reshape((-1,1)))
                 delta_map.insert(0,(delta * deriv_sigmoid))
+
+        weight_changes = []
+        bias_changes = []
+
+        for i in range(len(self.layer_sizes)-1):  # for each layer from the first layer
+            #  update the weights
+            weight_changes.append(step_size * (np.dot(activated_result[i].reshape(-1,1), delta_map[i].reshape(1,-1))))
+
+        for i in range(len(self.bias_matrix)):
+            #update bias
+            bias_changes.append(step_size * delta_map[i])
+
+        return (weight_changes, bias_changes)
+
+    def __backprop(self, weight_change: List[List[float]], bias_change: List[List[float]]) -> None: 
+        """Update the weights and bias' inside the network
+
+        Args:
+            weight_change (List[List[float]]): A list of changes to be added to the weights
+            bias_change (List[List[float]]): A list of changes to be added to the bias
+        """
         
         for i in range(len(self.layer_sizes)-1):  # for each layer from the first layer
-            
             #  update the weights
-            weight_change = (step_size * (np.dot(activated_result[i].reshape(-1,1), delta_map[i].reshape(1,-1))))
-            self.weight_matrix[i] = self.weight_matrix[i] + weight_change.reshape(self.weight_matrix[i].shape)
+            self.weight_matrix[i] = self.weight_matrix[i] + weight_change[i].reshape(self.weight_matrix[i].shape)
             
         for i in range(len(self.bias_matrix)):
-            bias_change = (step_size * delta_map[i])
-            self.bias_matrix[i] = self.bias_matrix[i] + bias_change.reshape((1,-1))
+            self.bias_matrix[i] = self.bias_matrix[i] + bias_change[i].reshape((1,-1))
 
 
     def save(self, file_name: str) -> None:   # TODO Allow for loading from disk

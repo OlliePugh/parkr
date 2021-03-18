@@ -15,8 +15,8 @@ def test_back_prop():
                                 np.array([[2],[4]])]
     test_network.bias_matrix = [np.array([[1, -6]]), np.array([[-3.92]])]
     
-    input_data = np.array([[1,0]])
-    expected_data = np.array([[1]])
+    input_data = np.array([[1,0],[1,0]])
+    expected_data = np.array([[1],[1]])
     
     test_network.train(2, (input_data, expected_data))
     
