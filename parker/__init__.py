@@ -37,7 +37,7 @@ class Network:
             self.weight_matrix.append(np.random.randn(amount_of_nodes, self.layer_sizes[index+1]) * np.sqrt(2.0/amount_of_nodes))
 
 
-    def __generate_bias(self, layer_sizes: List[int]) -> None:  # TODO create random bias starts
+    def __generate_bias(self, layer_sizes: List[int]) -> None:  
         """Generate the bias' for the network
 
         Args:
@@ -46,7 +46,7 @@ class Network:
         self.bias_matrix = []
 
         for index, amount_of_nodes in enumerate(self.layer_sizes[1:]):  # for all layers but input as input nodes can not have bias
-            self.bias_matrix.append(np.full((1, amount_of_nodes), 0.1))
+            self.bias_matrix.append(np.random.randn(1, amount_of_nodes) * np.sqrt(2.0/amount_of_nodes))
 
 
     def print(self) -> None:
