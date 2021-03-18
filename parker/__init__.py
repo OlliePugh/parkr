@@ -93,9 +93,9 @@ class Network:
             activated_node_value_matrix.append(Activation.activate(self.activation_function, raw_out))
 
         if return_entire_network:
-            return (node_value_matrix, activated_node_value_matrix)
+            return activated_node_value_matrix
         else:
-            return (node_value_matrix[-1], activated_node_value_matrix[-1])
+            return activated_node_value_matrix[-1]
 
     def train(self, epochs:int, training_data:Tuple[List[List[float]],List[List[float]]], step_size:float=0.1, **kwargs) -> None:
         """Train the network
@@ -105,12 +105,11 @@ class Network:
             training_data (List[List[float]]): Data to be trained on
             step_size (float, optional): Learning rate, higher will cause larger changes. Defaults to 0.1.
         """
-        last_cost = 0
 
         in_data, expected_data = training_data
 
         for epoch in range(epochs):
-            costs = []
+            training_costs = []
 
             avg_weight_change = []
 
@@ -124,7 +123,7 @@ class Network:
                 
             
             for i in range(len(training_data[0])):
-                raw_forward_pass, activated_forward_pass = self.feed_forward(in_data[i], return_entire_network=True)
+                activated_forward_pass = self.feed_forward(in_data[i], return_entire_network=True)
                 
                 row_weight_change, row_bias_change = self.__generate_changes(activated_forward_pass, training_data[1][i], step_size)
 
@@ -133,9 +132,22 @@ class Network:
                 for index, layer in enumerate(row_bias_change):
                     avg_bias_change[index] = avg_bias_change[index] + (layer.reshape((1,-1))/len(in_data))
      
-                costs.append(np.mean(cost(activated_forward_pass[-1], expected_data[i], len(expected_data))))
+                training_costs.append(np.mean(cost(activated_forward_pass[-1], expected_data[i], len(expected_data))))
 
-            print(f"Epoch {epoch+1}: {round(np.mean(costs),7)}")
+            training_loss = np.mean(training_costs)
+            to_print = f"Epoch {epoch+1}: TLoss: {round(training_loss,7)}"
+
+            if "validation" in kwargs:
+                validation_data, validation_expected_data = kwargs["validation"] 
+                validation_costs = []
+                for index, row in enumerate(validation_data):
+                    result = self.feed_forward(row)
+                    validation_costs.append(cost(result, validation_expected_data[index], len(validation_data)))
+
+                validation_loss = np.mean(validation_costs)
+                to_print += f" VLoss: {round(validation_loss,7)}"
+
+            print(to_print)
             self.__backprop(avg_weight_change, avg_bias_change)  
 
     def __generate_changes(self, activated_result: List[List[float]],  expected: List[float], step_size: float) -> Tuple[List[List[float]], List[List[float]]]:
