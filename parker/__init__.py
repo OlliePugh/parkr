@@ -37,7 +37,7 @@ class Network:
             self.weight_matrix.append(np.random.randn(amount_of_nodes, self.layer_sizes[index+1]) * np.sqrt(2.0/amount_of_nodes))
 
 
-    def __generate_bias(self, layer_sizes: List[int]) -> None:
+    def __generate_bias(self, layer_sizes: List[int]) -> None:  # TODO create random bias starts
         """Generate the bias' for the network
 
         Args:
@@ -97,7 +97,7 @@ class Network:
         else:
             return (node_value_matrix[-1], activated_node_value_matrix[-1])
 
-    def train(self, epochs:int, training_data:List[List[float]], step_size:float=0.1, **kwargs) -> None:
+    def train(self, epochs:int, training_data:Tuple[List[List[float]],List[List[float]]], step_size:float=0.1, **kwargs) -> None:
         """Train the network
 
         Args:
@@ -106,6 +106,9 @@ class Network:
             step_size (float, optional): Learning rate, higher will cause larger changes. Defaults to 0.1.
         """
         last_cost = 0
+
+        in_data, expected_data = training_data
+
         for epoch in range(epochs):
             costs = []
 
@@ -121,21 +124,19 @@ class Network:
                 
             
             for i in range(len(training_data[0])):
-                raw_forward_pass, activated_forward_pass = self.feed_forward(training_data[0][i], return_entire_network=True)
+                raw_forward_pass, activated_forward_pass = self.feed_forward(in_data[i], return_entire_network=True)
                 
                 row_weight_change, row_bias_change = self.__generate_changes(activated_forward_pass, training_data[1][i], step_size)
 
                 for index, layer in enumerate(row_weight_change):
-                    avg_weight_change[index] = avg_weight_change[index] + (layer/len(training_data[0]))
+                    avg_weight_change[index] = avg_weight_change[index] + (layer/len(in_data))
                 for index, layer in enumerate(row_bias_change):
-                    avg_bias_change[index] = avg_bias_change[index] + (layer.reshape((1,-1))/len(training_data[0]))
+                    avg_bias_change[index] = avg_bias_change[index] + (layer.reshape((1,-1))/len(in_data))
      
-                costs.append(np.mean(cost(activated_forward_pass[-1], training_data[1][i])))
+                costs.append(np.mean(cost(activated_forward_pass[-1], expected_data[i], len(expected_data))))
 
             print(f"Epoch {epoch+1}: {round(np.mean(costs),7)}")
             self.__backprop(avg_weight_change, avg_bias_change)  
-
-            #FIXME only training for last row currently 
 
     def __generate_changes(self, activated_result: List[List[float]],  expected: List[float], step_size: float) -> Tuple[List[List[float]], List[List[float]]]:
         """Generate changes for the weights and bias' from a forward pass and the expected results
@@ -210,8 +211,8 @@ class Network:
         raise TypeError('Unknown type:', type(obj))
 
 
-def cost(predicted, actual):
-    return 0.5 * (predicted - actual)**2
+def cost(predicted, actual, rows_of_data):
+    return ((predicted - actual)**2) / rows_of_data
 
 
 def cost_prime(predicted, actual):

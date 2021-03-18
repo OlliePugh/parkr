@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 class ActivationMethods(Enum):
     SIGMOID=1
     RELU=2
+    TANH=3
 
 class Activation(ABC):
 
@@ -28,6 +29,9 @@ class Activation(ABC):
 
         elif method == ActivationMethods.RELU:
             return (relu(value))
+        
+        elif method == ActivationMethods.TANH:
+            return (np.tanh(value))
 
         raise ValueError ("Unkown method specified")
 
@@ -51,6 +55,9 @@ class Activation(ABC):
 
         elif method == ActivationMethods.RELU:
             return (derivative_relu(value))
+
+        elif method == ActivationMethods.TANH:
+            return 1-pow(np.tanh(value), 2.0)
 
         raise ValueError ("Unkown method specified")
 

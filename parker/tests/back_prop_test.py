@@ -18,7 +18,6 @@ def test_back_prop():
     input_data = np.array([[1,0],[1,0]])
     expected_data = np.array([[1],[1]])
     
-    test_network.train(2, (input_data, expected_data))
+    test_network.train(2, (input_data, expected_data), step_size=0.1)
     
     assert abs(test_network.feed_forward([[1,0]])[1][0][0]-EXPECTED_VALUE) < 0.00000001  # check if its close (double issues)
-
