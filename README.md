@@ -1,7 +1,7 @@
 # Parkr 
 ## A light weight neural network library
 
-[![Python package](https://github.com/OlliePugh/parkr/actions/workflows/python-package.yml/badge.svg)](https://github.com/OlliePugh/parkr/actions/workflows/python-package.yml)
+[![Python package](https://github.com/OlliePugh/parkr/actions/workflows/python-package.yml/badge.svg?event=push)](https://github.com/OlliePugh/parkr/actions/workflows/python-package.yml)
 
 Parkr was created for my second year AI methods module at university.
 
