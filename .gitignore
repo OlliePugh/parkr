@@ -1,6 +1,10 @@
 # Parker files
 *.prkr
 
+*.pyc
+__pycache__
+*/__pycache__
+
 build/
 
 # Prerequisites
