@@ -3,7 +3,7 @@ import numpy as np
 
 sys.path.append('..')
 
-from parker import Network, ActivationMethods
+from parkr import Network, ActivationMethods
 
 
 def test_back_prop():
