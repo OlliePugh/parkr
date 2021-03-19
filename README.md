@@ -29,15 +29,15 @@ Then when calling the train method the network will updates its bias' and weight
 training_data = np.array(
     [0.77,0.21,0.34,0.2,0.12,0.54],
     [0.43,0.12,0.65,0.12,0.76,0.34]
-    );
+    )
 
 expected_data = np.array(
     [1],
     [0]
-    );
+    )
 
-epochs = 10;
-my_network.train(epochs, (training_data, expected_data));
+epochs = 10
+my_network.train(epochs, (training_data, expected_data))
 ```
 
 ### Performing a forward pass on the network
@@ -55,7 +55,7 @@ Parkr currently supports saving networks as json but not reopening them yet.
 #### Save
 This will save the networks structure as a .json file 
 ```
-my_network.save("my_network_on_disk");
+my_network.save("my_network_on_disk")
 ```
 
 #### Load (WIP)
