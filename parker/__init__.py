@@ -3,6 +3,7 @@ from typing import List, Tuple
 
 import numpy as np
 import json
+import math
 
 class Network:
     def __init__(self, input_nodes: int, hidden_layers: List[int], output_nodes: int, activation_function: ActivationMethods):
@@ -108,31 +109,58 @@ class Network:
 
         in_data, expected_data = training_data
 
-        for epoch in range(epochs):
-            training_costs = []
 
-            avg_weight_change = []
+        training_batches = [in_data]
+        expected_batches = [expected_data]
+        
+        if "batch_size" in kwargs:
+            batch_size = kwargs["batch_size"]
+            start_val = 0
 
-            for layer in self.weight_matrix:
-                avg_weight_change.append(np.zeros(layer.shape))
+            training_batches = []  # convert back to empty lists
+            expected_batches = []
+            for i in range(math.ceil(len(in_data)/batch_size)):
+                ending_index = min(len(in_data)-1, start_val+batch_size)  # this will ensure that we dont go over the end of the array
 
-            avg_bias_change = []
+                training_batches.append(in_data[start_val:ending_index])
+                expected_batches.append(expected_data[start_val:ending_index])
 
-            for layer in self.bias_matrix:
-                avg_bias_change.append(np.zeros(layer.shape))
-                
+                start_val += batch_size
+
             
-            for i in range(len(training_data[0])):
-                activated_forward_pass = self.feed_forward(in_data[i], return_entire_network=True)
-                
-                row_weight_change, row_bias_change = self.__generate_changes(activated_forward_pass, training_data[1][i], step_size)
 
-                for index, layer in enumerate(row_weight_change):
-                    avg_weight_change[index] = avg_weight_change[index] + (layer/len(in_data))
-                for index, layer in enumerate(row_bias_change):
-                    avg_bias_change[index] = avg_bias_change[index] + (layer.reshape((1,-1))/len(in_data))
-     
-                training_costs.append(np.mean(cost(activated_forward_pass[-1], expected_data[i], len(expected_data))))
+        for epoch in range(epochs):  # for each epoch
+
+            training_costs = []  # array to store training costs
+
+            for batch_count, in_batch in enumerate(training_batches):
+
+                # create templates for weight and bias changes
+
+                avg_weight_change = []
+
+                for layer in self.weight_matrix:
+                    avg_weight_change.append(np.zeros(layer.shape))
+
+                avg_bias_change = []
+
+                for layer in self.bias_matrix:
+                    avg_bias_change.append(np.zeros(layer.shape))
+                    
+                # cycle through the batch of data
+
+                for i in range(len(in_batch)):  # for each row in the batch
+                    activated_forward_pass = self.feed_forward(in_batch[i], return_entire_network=True)  # get forward pass result
+                    row_weight_change, row_bias_change = self.__generate_changes(activated_forward_pass, expected_batches[batch_count][i], step_size)  # generate the changes required
+
+                    for index, layer in enumerate(row_weight_change):
+                        avg_weight_change[index] = avg_weight_change[index] + (layer/len(in_batch))
+                    for index, layer in enumerate(row_bias_change):
+                        avg_bias_change[index] = avg_bias_change[index] + (layer.reshape((1,-1))/len(in_batch))
+        
+                    training_costs.append(np.mean(cost(activated_forward_pass[-1], expected_batches[batch_count][i], len(expected_data))))
+
+                self.__backprop(avg_weight_change, avg_bias_change)  
 
             training_loss = np.mean(training_costs)
             to_print = f"Epoch {epoch+1}: TLoss: {round(training_loss,7)}"
@@ -148,7 +176,6 @@ class Network:
                 to_print += f" VLoss: {round(validation_loss,7)}"
 
             print(to_print)
-            self.__backprop(avg_weight_change, avg_bias_change)  
 
     def __generate_changes(self, activated_result: List[List[float]],  expected: List[float], step_size: float) -> Tuple[List[List[float]], List[List[float]]]:
         """Generate changes for the weights and bias' from a forward pass and the expected results
