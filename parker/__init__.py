@@ -158,7 +158,9 @@ class Network:
                     for index, layer in enumerate(row_bias_change):
                         avg_bias_change[index] = avg_bias_change[index] + (layer.reshape((1,-1))/len(in_batch))
         
-                    training_costs.append(np.mean(cost(activated_forward_pass[-1], expected_batches[batch_count][i], len(expected_data))))
+                    this_pass_cost = cost(activated_forward_pass[-1], expected_batches[batch_count][i], len(expected_data[0]))
+
+                    training_costs.append(np.mean(this_pass_cost))  # get mean of all output nodes cost
 
                 self.__backprop(avg_weight_change, avg_bias_change)  
 
@@ -170,7 +172,7 @@ class Network:
                 validation_costs = []
                 for index, row in enumerate(validation_data):
                     result = self.feed_forward(row)
-                    validation_costs.append(cost(result, validation_expected_data[index], len(validation_data)))
+                    validation_costs.append(cost(result, validation_expected_data[index], len(validation_expected_data[0])))
 
                 validation_loss = np.mean(validation_costs)
                 to_print += f" VLoss: {round(validation_loss,7)}"
