@@ -3,8 +3,8 @@ import numpy as np
 
 sys.path.append('..')
 
-from parkr import Network, ActivationMethods
-
+from parkr.network import Network
+from parkr.activation import ActivationMethods  # TODO sort this multiple imports out
 
 def test_back_prop():
     EXPECTED_VALUE = 0.53639513
