@@ -74,7 +74,7 @@ class Network:
             node_offset += len(cols)
 
 
-    def feed_forward(self, inp: List[List[float]], return_entire_network: bool=False) -> Tuple[List[List[float]], List[List[float]]]:
+    def forward_pass(self, inp: List[float], return_entire_network: bool=False) -> Tuple[List[List[float]], List[List[float]]]:
         """Perform a forward pass on the network
 
         Args:
@@ -84,6 +84,8 @@ class Network:
         Returns:
             (List[float], List[float]): A list of the raw values and the activated networks 
         """
+        if len(inp) != self.layer_sizes[0]: raise ValueError(f"{len(inp)} inputs provided when the network has {self.layer_sizes[0]} input nodes")
+
         activated_node_value_matrix = [np.array(inp)]
         node_value_matrix = [np.array(inp)]
         
@@ -109,6 +111,11 @@ class Network:
 
         in_data, expected_data = training_data
 
+        # check the inputs are valid
+
+        if len(in_data[0]) != self.layer_sizes[0]: raise ValueError(f"{len(inp)} inputs provided when the network has {self.layer_sizes[0]} input nodes")
+        
+        if len(expected_data[0]) != self.layer_sizes[-1]: raise ValueError(f"{len(expected_data[0])} outputs provided when the network has {self.layer_sizes[-1]} output nodes")
 
         training_batches = [in_data]
         expected_batches = [expected_data]
@@ -152,7 +159,7 @@ class Network:
                 # cycle through the batch of data
 
                 for i in range(len(in_batch)):  # for each row in the batch
-                    activated_forward_pass = self.feed_forward(in_batch[i], return_entire_network=True)  # get forward pass result
+                    activated_forward_pass = self.forward_pass(in_batch[i], return_entire_network=True)  # get forward pass result
                     row_weight_change, row_bias_change = self.__generate_changes(activated_forward_pass, expected_batches[batch_count][i], step_size)  # generate the changes required
 
                     for index, layer in enumerate(row_weight_change):
@@ -173,7 +180,7 @@ class Network:
                 validation_data, validation_expected_data = kwargs["validation"] 
                 validation_costs = []
                 for index, row in enumerate(validation_data):
-                    result = self.feed_forward(row)
+                    result = self.forward_pass(row)
                     validation_costs.append(cost(result, validation_expected_data[index], len(validation_expected_data[0])))
 
                 validation_loss = round(np.mean(validation_costs), 7)

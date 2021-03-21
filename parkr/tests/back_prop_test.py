@@ -20,4 +20,4 @@ def test_back_prop():
     
     test_network.train(2, (input_data, expected_data), step_size=0.1, batch_size=2)
     
-    assert abs(test_network.feed_forward([[1,0]])[0][0]-EXPECTED_VALUE) < 0.00000001  # check if its close (double issues)
+    assert abs(test_network.forward_pass([1,0])[0][0]-EXPECTED_VALUE) < 0.00000001  # check if its close (double issues)
