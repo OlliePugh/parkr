@@ -6,6 +6,7 @@ class ActivationMethods(Enum):
     SIGMOID=1
     RELU=2
     TANH=3
+    LEAKY_RELU=4
 
 class Activation(ABC):
 
@@ -28,10 +29,13 @@ class Activation(ABC):
             return sigmoid(value)
 
         elif method == ActivationMethods.RELU:
-            return (relu(value))
+            return relu(value)
         
         elif method == ActivationMethods.TANH:
-            return (np.tanh(value))
+            return np.tanh(value)
+
+        elif method == ActivationMethods.LEAKY_RELU:
+            return leaky_relu(value)
 
         raise ValueError ("Unkown method specified")
 
@@ -54,10 +58,13 @@ class Activation(ABC):
             return derivative_sigmoid(value)
 
         elif method == ActivationMethods.RELU:
-            return (derivative_relu(value))
+            return derivative_relu(value)
 
         elif method == ActivationMethods.TANH:
             return 1-pow(np.tanh(value), 2.0)
+
+        elif method == ActivationMethods.LEAKY_RELU:
+            return derivative_leaky_relu(value)
 
         raise ValueError ("Unkown method specified")
 
@@ -72,3 +79,9 @@ def relu(value):
 
 def derivative_relu(value):
     return (value > 0).astype(int)
+
+def leaky_relu(value, alpha=0.01):
+    return np.where(value > 0, value, alpha * value) 
+
+def derivative_leaky_relu(value, alpha=0.01):
+    return np.where(value > 0, 1, alpha)
