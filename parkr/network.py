@@ -107,6 +107,8 @@ class Network:
             epochs (int): Amount of epochs to be performed
             training_data (List[List[float]]): Data to be trained on
             step_size (float, optional): Learning rate, higher will cause larger changes. Defaults to 0.1.
+            export_name (string, optional): The file name to output the training loss and validation loss to as a csv. Disabled by default.
+            momentum_rate (float, optional): The rate at which you want momentum to occur in the network. Disabled by default.
         """
 
         in_data, expected_data = training_data
@@ -138,6 +140,9 @@ class Network:
             export_file = open(f"{kwargs['export_name']}.csv", "w+")
             export_file.write("Training Loss, Validation Loss\n")
 
+        prev_weight_change = []
+        prev_bias_change = []
+
         for epoch in range(epochs):  # for each epoch
 
             training_costs = []  # array to store training costs
@@ -155,12 +160,12 @@ class Network:
 
                 for layer in self.bias_matrix:
                     avg_bias_change.append(np.zeros(layer.shape))
-                    
+
                 # cycle through the batch of data
 
                 for i in range(len(in_batch)):  # for each row in the batch
                     activated_forward_pass = self.forward_pass(in_batch[i], return_entire_network=True)  # get forward pass result
-                    row_weight_change, row_bias_change = self.__generate_changes(activated_forward_pass, expected_batches[batch_count][i], step_size)  # generate the changes required
+                    row_weight_change, row_bias_change = self.__generate_changes(activated_forward_pass, expected_batches[batch_count][i], step_size, prev_changes=(prev_weight_change, prev_bias_change), **kwargs)  # generate the changes required
 
                     for index, layer in enumerate(row_weight_change):
                         avg_weight_change[index] = avg_weight_change[index] + (layer/len(in_batch))
@@ -172,6 +177,9 @@ class Network:
                     training_costs.append(np.mean(this_pass_cost))  # get mean of all output nodes cost
 
                 self.__backprop(avg_weight_change, avg_bias_change)  
+
+                prev_weight_change = avg_weight_change
+                prev_bias_change = avg_bias_change
 
             training_loss = round(np.mean(training_costs), 7)
             to_print = f"Epoch {epoch+1}: TLoss: {training_loss}"
@@ -194,7 +202,7 @@ class Network:
         if "export_name" in kwargs:
             export_file.close()  # close the export file
 
-    def __generate_changes(self, activated_result: List[List[float]],  expected: List[float], step_size: float) -> Tuple[List[List[float]], List[List[float]]]:
+    def __generate_changes(self, activated_result: List[List[float]],  expected: List[float], step_size: float, prev_changes, **kwargs) -> Tuple[List[List[float]], List[List[float]]]:
         """Generate changes for the weights and bias' from a forward pass and the expected results
 
         Args:
@@ -223,11 +231,23 @@ class Network:
 
         for i in range(len(self.layer_sizes)-1):  # for each layer from the first layer
             #  update the weights
-            weight_changes.append(step_size * (np.dot(activated_result[i].reshape(-1,1), delta_map[i].reshape(1,-1))))
+
+            new_weight = step_size * (np.dot(activated_result[i].reshape(-1,1), delta_map[i].reshape(1,-1)))
+
+            if "momentum_rate" in kwargs and prev_changes[0]:
+                new_weight += kwargs["momentum_rate"] * prev_changes[0][i]  # add the values of the previous weight changes of the layer
+
+            weight_changes.append(new_weight)
 
         for i in range(len(self.bias_matrix)):
             #update bias
-            bias_changes.append(step_size * delta_map[i])
+
+            new_bias = step_size * delta_map[i]
+
+            if "momentum_rate" in kwargs and prev_changes[1]:
+                new_bias += kwargs["momentum_rate"] * prev_changes[1][i].T  # add the values of the previous bias changes of the layer
+
+            bias_changes.append(new_bias)
 
         return (weight_changes, bias_changes)
 
