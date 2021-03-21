@@ -107,6 +107,7 @@ class Network:
             epochs (int): Amount of epochs to be performed
             training_data (List[List[float]]): Data to be trained on
             step_size (float, optional): Learning rate, higher will cause larger changes. Defaults to 0.1.
+            batch_size (float, optional): The amount of rows in each batch. Disabled by default.
             export_name (string, optional): The file name to output the training loss and validation loss to as a csv. Disabled by default.
             momentum_rate (float, optional): The rate at which you want momentum to occur in the network. Disabled by default.
         """
