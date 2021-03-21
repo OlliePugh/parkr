@@ -127,7 +127,9 @@ class Network:
 
                 start_val += batch_size
 
-            
+        if "export_name" in kwargs:
+            export_file = open(f"{kwargs['export_name']}.csv", "w+")
+            export_file.write("Training Loss, Validation Loss\n")
 
         for epoch in range(epochs):  # for each epoch
 
@@ -164,8 +166,8 @@ class Network:
 
                 self.__backprop(avg_weight_change, avg_bias_change)  
 
-            training_loss = np.mean(training_costs)
-            to_print = f"Epoch {epoch+1}: TLoss: {round(training_loss,7)}"
+            training_loss = round(np.mean(training_costs), 7)
+            to_print = f"Epoch {epoch+1}: TLoss: {training_loss}"
 
             if "validation" in kwargs:
                 validation_data, validation_expected_data = kwargs["validation"] 
@@ -174,10 +176,16 @@ class Network:
                     result = self.feed_forward(row)
                     validation_costs.append(cost(result, validation_expected_data[index], len(validation_expected_data[0])))
 
-                validation_loss = np.mean(validation_costs)
-                to_print += f" VLoss: {round(validation_loss,7)}"
+                validation_loss = round(np.mean(validation_costs), 7)
+                to_print += f" VLoss: {validation_loss}"
+
+            if "export_name" in kwargs:  # output the loss on that back prop to the output file
+                export_file.write(f"{training_loss}, {validation_loss}\n")
 
             print(to_print)
+
+        if "export_name" in kwargs:
+            export_file.close()  # close the export file
 
     def __generate_changes(self, activated_result: List[List[float]],  expected: List[float], step_size: float) -> Tuple[List[List[float]], List[List[float]]]:
         """Generate changes for the weights and bias' from a forward pass and the expected results
