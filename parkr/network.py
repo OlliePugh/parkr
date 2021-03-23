@@ -205,11 +205,11 @@ class Network:
                     difference = (validation_loss - last_bd[0])/max(last_bd[0], validation_loss)
                     
                     if difference > bd_threshold:  # decrease step_size
-                        step_size = max(ste_size * bd_decrease, 0.01)
+                        step_size = max(step_size * bd_decrease, 0.01)
                         self.weight_matrix = last_bd[1]  # reset weights and bias' to before for better training
                         self.bias_matrix = last_bd[2]
 
-                    elif difference < bd_threshold:  # increase step_size
+                    elif difference < bd_threshold*-1:  # increase step_size
                         step_size = min(step_size * bd_increase, 0.5)
 
                 last_bd = (validation_loss, self.weight_matrix, self.bias_matrix)
