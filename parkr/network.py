@@ -290,7 +290,3 @@ class Network:
 
 def cost(predicted, actual, rows_of_data):
     return ((predicted - actual)**2) / rows_of_data
-
-
-def cost_prime(predicted, actual):
-    return predicted - actual

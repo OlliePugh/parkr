@@ -7,6 +7,7 @@ class ActivationMethods(Enum):
     RELU=2
     TANH=3
     LEAKY_RELU=4
+    LINEAR=5
 
 class Activation(ABC):
 
@@ -36,6 +37,8 @@ class Activation(ABC):
 
         elif method == ActivationMethods.LEAKY_RELU:
             return leaky_relu(value)
+        elif method == ActivationMethods.LINEAR:
+            return value
 
         raise ValueError ("Unkown method specified")
 
@@ -65,6 +68,9 @@ class Activation(ABC):
 
         elif method == ActivationMethods.LEAKY_RELU:
             return derivative_leaky_relu(value)
+        
+        elif method == ActivationMethods.LINEAR:
+            return 1
 
         raise ValueError ("Unkown method specified")
 
