@@ -6,7 +6,7 @@ import json
 import math
 
 class Network:
-    def __init__(self, input_nodes: int, hidden_layers: List[int], output_nodes: int, activation_function: ActivationMethods):
+    def __init__(self, input_nodes: int, hidden_layers: List[int], output_nodes: int, activation_function: ActivationMethods, **kwargs):
         """
         Args:
             input_nodes (int): Amount of input nodes in network
@@ -296,7 +296,31 @@ class Network:
         """
         with open(f"{file_name}.json", "w+") as file:
             file.write(json.dumps(self.__dict__, default=self.__json_parser, indent=2))
-        
+
+
+    @staticmethod
+    def open(file_name: str):
+        """Open a file from disk
+
+        Args:
+            file_name (str): The name of the path to the network file
+
+        Returns:
+            Network: [description]
+        """
+        with open(f"{file_name}.json") as json_file:
+            data = json.load(json_file)
+
+            data["weight_matrix"] = [np.array(x) for x in data["weight_matrix"]]
+            data["bias_matrix"] = [np.array(x) for x in data["bias_matrix"]]
+            data["activation_function"] = ActivationMethods(data["activation_function"])
+
+            input_nodes = data["layer_sizes"][0]
+            output_nodes = data["layer_sizes"][-1]
+            hidden_nodes = data["layer_sizes"][1:-1]
+
+            return Network(input_nodes, hidden_nodes, output_nodes, **data)
+            #return json.loads(data, object_hook=lambda d: Network(**d))
 
     @staticmethod
     def __json_parser(obj):
@@ -305,6 +329,8 @@ class Network:
                 return obj.tolist()
             else:
                 return obj.item()
+        if isinstance(obj, ActivationMethods):
+            return obj.value
         raise TypeError('Unknown type:', type(obj))
 
 
