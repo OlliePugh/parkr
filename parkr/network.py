@@ -110,6 +110,7 @@ class Network:
             batch_size (float, optional): The amount of rows in each batch. Disabled by default.
             export_name (string, optional): The file name to output the training loss and validation loss to as a csv. Disabled by default.
             momentum_rate (float, optional): The rate at which you want momentum to occur in the network. Disabled by default.
+            bold_driver (Tuple[float, float, float, float], optional): The treshold to change the step size, the increase multiplier, and the decrease multiplier. And how frequently to check, in epochs. Disabled by default.
         """
 
         in_data, expected_data = training_data
@@ -143,6 +144,8 @@ class Network:
 
         prev_weight_change = []
         prev_bias_change = []
+
+        last_bd = (None , self.weight_matrix, self.bias_matrix)
 
         for epoch in range(epochs):  # for each epoch
 
@@ -194,6 +197,23 @@ class Network:
 
                 validation_loss = round(np.mean(validation_costs), 7)
                 to_print += f" VLoss: {validation_loss}"
+
+            # check bold driver
+            if ("bold_driver" in kwargs and epoch % kwargs["bold_driver"][3] == 0):
+                bd_threshold, bd_increase, bd_decrease, bd_frequency = kwargs["bold_driver"]
+                if (epoch != 0):  # it is not the first epoch therefore can affect step_size
+                    difference = (validation_loss - last_bd[0])/max(last_bd[0], validation_loss)
+                    
+                    if difference > bd_threshold:  # decrease step_size
+                        step_size = max(ste_size * bd_decrease, 0.01)
+                        self.weight_matrix = last_bd[1]  # reset weights and bias' to before for better training
+                        self.bias_matrix = last_bd[2]
+
+                    elif difference < bd_threshold:  # increase step_size
+                        step_size = min(step_size * bd_increase, 0.5)
+
+                last_bd = (validation_loss, self.weight_matrix, self.bias_matrix)
+
 
             if "export_name" in kwargs:  # output the loss on that back prop to the output file
                 export_file.write(f"{training_loss}, {validation_loss}\n")
