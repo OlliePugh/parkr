@@ -23,8 +23,16 @@ class Network:
         
         self.activation_function = activation_function
         self.layer_sizes = [input_nodes] + hidden_layers + [output_nodes]  # a list that holds the amount of nodes in each layer
-        self.__generate_weights(self.layer_sizes)
-        self.__generate_bias(self.layer_sizes)
+        
+        if "weight_matrix" in kwargs:
+            self.weight_matrix = kwargs["weight_matrix"]
+        else:
+            self.__generate_weights(self.layer_sizes)
+
+        if "bias_matrix" in kwargs:
+            self.bias_matrix = kwargs["bias_matrix"]
+        else:
+            self.__generate_bias(self.layer_sizes)
 
     def __generate_weights(self, layer_sizes: List[int]) -> None:
         """Generate the weights for the network
