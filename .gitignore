@@ -1,6 +1,10 @@
 # Parker files
 *.prkr
 
+#pypi stuff
+dist/
+parkr/*.egg-info
+
 *.pyc
 __pycache__
 */__pycache__
