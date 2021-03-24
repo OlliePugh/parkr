@@ -50,16 +50,18 @@ my_result = my_network.feed_forward([[0.54,0.32,0.12,0.46,0.68,0.43]])
 
 ### Saving and opening networks
 
-Parkr currently supports saving networks as json but not reopening them yet.
-
+Parkr supports saving networks to disk and loading them back in so that you do not have to retrain your network everytime it leaves memory.
 #### Save
 This will save the networks structure as a .json file 
 ```
 my_network.save("my_network_on_disk")
 ```
 
-#### Load (WIP)
-Not yet implimented
+#### Load
+This will load the network from the .json file
+```
+my_loaded_network = Network.open("my_network_on_disk")
+```
 
 ### Print
 This will output the structure of the network along with the weights and bias' to the console.
