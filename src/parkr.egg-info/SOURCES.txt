@@ -1,0 +1,15 @@
+LICENSE.md
+README.md
+pyproject.toml
+setup.py
+src/parkr/__init__.py
+src/parkr/__main__.py
+src/parkr/activation.py
+src/parkr/network.py
+src/parkr.egg-info/PKG-INFO
+src/parkr.egg-info/SOURCES.txt
+src/parkr.egg-info/dependency_links.txt
+src/parkr.egg-info/requires.txt
+src/parkr.egg-info/top_level.txt
+src/parkr/tests/__init__.py
+src/parkr/tests/back_prop_test.py
