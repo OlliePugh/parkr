@@ -14,6 +14,7 @@ It is very basic to get a neural network up and running and getting results quic
 To create a network you just need to specify how many input nodes, how many output nodes, a vector that contains the amount of nodes in each hidden layer, and the activation function you want to use.
 
 ```
+from parkr import Network, ActivationMethods
 my_network = Network(6, [4,4], 2, ActivationMethods.TANH)
 ```
 
@@ -26,6 +27,7 @@ To train the network you must pass a tuple where the first element is the traini
 Then when calling the train method the network will updates its bias' and weights on those values.
 
 ```
+import numpy as np
 training_data = np.array(
     [0.77,0.21,0.34,0.2,0.12,0.54],
     [0.43,0.12,0.65,0.12,0.76,0.34]

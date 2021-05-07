@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: parkr
-Version: 1.0.0
+Version: 1.0.1
 Summary: A lightweight basic neural networks library in Python
 Home-page: https://github.com/OlliePugh/parkr
 Author: Ollie Pugh
@@ -23,6 +23,7 @@ Description: # Parkr
         To create a network you just need to specify how many input nodes, how many output nodes, a vector that contains the amount of nodes in each hidden layer, and the activation function you want to use.
         
         ```
+        from parkr import Network, ActivationMethods
         my_network = Network(6, [4,4], 2, ActivationMethods.TANH)
         ```
         

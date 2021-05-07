@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="parkr",
-    version="1.0.0",
+    version="1.0.1",
     author="Ollie Pugh",
     author_email="oliver.pugh@mac.com",
     description="A lightweight basic neural networks library in Python",
