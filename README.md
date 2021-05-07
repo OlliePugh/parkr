@@ -7,6 +7,12 @@ Parkr was created for my second year AI methods module at university.
 
 It is very basic to get a neural network up and running and getting results quickly.
 
+## Installation
+
+```
+pip install parkr
+```
+
 ## Examples
 
 ### Creating the network
