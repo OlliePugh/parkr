@@ -3,7 +3,7 @@
 
 #pypi stuff
 dist/
-parkr/*.egg-info
+#src/parkr/*.egg-info
 
 *.pyc
 __pycache__
