@@ -34,15 +34,15 @@ Then when calling the train method the network will updates its bias' and weight
 
 ```
 import numpy as np
-training_data = np.array(
+training_data = np.array([
     [0.77,0.21,0.34,0.2,0.12,0.54],
     [0.43,0.12,0.65,0.12,0.76,0.34]
-    )
+    ])
 
-expected_data = np.array(
+expected_data = np.array([
     [1],
     [0]
-    )
+    ])
 
 epochs = 10
 my_network.train(epochs, (training_data, expected_data))
