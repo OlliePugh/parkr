@@ -1,5 +1,7 @@
 # Parker files
 *.prkr
+*.csv
+*.json
 
 #pypi stuff
 dist/
@@ -8,6 +10,11 @@ dist/
 *.pyc
 __pycache__
 */__pycache__
+.pytest_cache
+
+# development stuff
+env/
+main.py
 
 build/
 

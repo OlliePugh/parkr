@@ -21,7 +21,7 @@ To create a network you just need to specify how many input nodes, how many outp
 
 ```
 from parkr import Network, ActivationMethods
-my_network = Network(6, [4,4], 2, ActivationMethods.TANH)
+my_network = Network(6, [4,4], 1, ActivationMethods.TANH)
 ```
 
 This will create a network with 6 input nodes, 2 hidden layers, both with 4 nodes each and 2 output nodes and it will use the tanh activation function.
@@ -53,7 +53,7 @@ my_network.train(epochs, (training_data, expected_data))
 To perform a forward pass on the network you simply pass it a vector with each element as an input vaule.
 
 ```
-my_result = my_network.feed_forward([[0.54,0.32,0.12,0.46,0.68,0.43]])
+my_result = my_network.forward_pass([0.54,0.32,0.12,0.46,0.68,0.43])
 ```
 
 ### Saving and opening networks
