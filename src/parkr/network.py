@@ -125,7 +125,7 @@ class Network:
 
         # check the inputs are valid
 
-        if len(in_data[0]) != self.layer_sizes[0]: raise ValueError(f"{len(inp)} inputs provided when the network has {self.layer_sizes[0]} input nodes")
+        if len(in_data[0]) != self.layer_sizes[0]: raise ValueError(f"{len(in_data[0])} inputs provided when the network has {self.layer_sizes[0]} input nodes")
         
         if len(expected_data[0]) != self.layer_sizes[-1]: raise ValueError(f"{len(expected_data[0])} outputs provided when the network has {self.layer_sizes[-1]} output nodes")
 
@@ -148,7 +148,15 @@ class Network:
 
         if "export_name" in kwargs:
             export_file = open(f"{kwargs['export_name']}.csv", "w+")
-            export_file.write("Training Loss, Validation Loss\n")
+            
+            export_file.write("Training Loss")
+            
+            if "validation" in kwargs:
+                export_file.write(", Validation Loss")
+
+            export_file.write("\n")
+                
+
 
         prev_weight_change = []
         prev_bias_change = []
@@ -224,7 +232,14 @@ class Network:
 
 
             if "export_name" in kwargs:  # output the loss on that back prop to the output file
-                export_file.write(f"{training_loss}, {validation_loss}\n")
+
+                export_file.write(f"{training_loss}")
+
+                if "validation" in kwargs:
+                    export_file.write(f", {validation_loss}")
+
+                export_file.write("\n")
+                    
 
             print(to_print)
 
